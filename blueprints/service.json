@@ -1,0 +1,82 @@
+{
+  "identifier": "service",
+  "title": "Service",
+  "icon": "Service",
+  "description": "A microservice in the catalog",
+  "schema": {
+    "properties": {
+      "name": {
+        "title": "Service Name",
+        "type": "string",
+        "description": "Unique identifier for the service (e.g., payment-service)"
+      },
+      "description": {
+        "title": "Description",
+        "type": "string",
+        "description": "What this service does"
+      },
+      "language": {
+        "title": "Language",
+        "type": "string",
+        "enum": ["Python", "Go", "Node.js", "Java", "Rust"],
+        "description": "Primary programming language"
+      },
+      "owner": {
+        "title": "Owner",
+        "type": "string",
+        "description": "Team or person responsible (e.g., platform-team)"
+      },
+      "repository_url": {
+        "title": "Repository URL",
+        "type": "string",
+        "format": "url",
+        "description": "GitHub repository URL"
+      },
+      "port": {
+        "title": "Service Port",
+        "type": "number",
+        "description": "Port number the service runs on"
+      },
+      "health_check_url": {
+        "title": "Health Check Endpoint",
+        "type": "string",
+        "description": "API endpoint for health checks (e.g., /health)"
+      },
+      "dependencies": {
+        "title": "Dependencies",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of services this depends on"
+      },
+      "tech_stack": {
+        "title": "Tech Stack",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Technologies and frameworks used"
+      },
+      "status": {
+        "title": "Status",
+        "type": "string",
+        "enum": ["active", "deprecated", "experimental"],
+        "default": "active",
+        "description": "Current status of the service"
+      },
+      "created_at": {
+        "title": "Created At",
+        "type": "string",
+        "format": "date-time",
+        "description": "When the service was created"
+      }
+    },
+    "required": [
+      "name",
+      "language",
+      "owner",
+      "repository_url"
+    ]
+  }
+}

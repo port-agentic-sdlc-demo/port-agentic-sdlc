@@ -1,0 +1,24 @@
+{
+  "blueprint": "service",
+  "properties": {
+    "name": "payment-service",
+    "description": "Handles payment processing, transactions, and retry logic. Integrates with Notification Service for failure alerts.",
+    "language": "Python",
+    "owner": "platform-team",
+    "repository_url": "https://github.com/port-agentic-sdlc-demo/payment-service",
+    "port": 8003,
+    "health_check_url": "/health",
+    "dependencies": [
+      "notification-service"
+    ],
+    "tech_stack": [
+      "Python 3.10+",
+      "FastAPI",
+      "Pydantic",
+      "uvicorn",
+      "httpx"
+    ],
+    "status": "active",
+    "created_at": "2026-09-30T00:00:00Z"
+  }
+}

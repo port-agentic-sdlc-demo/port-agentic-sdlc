@@ -1,0 +1,21 @@
+{
+  "blueprint": "service",
+  "properties": {
+    "name": "notification-service",
+    "description": "Sends notifications via email, SMS, and webhooks. Provides async notification handling for other services.",
+    "language": "Python",
+    "owner": "platform-team",
+    "repository_url": "https://github.com/port-agentic-sdlc-demo/notification-service",
+    "port": 8002,
+    "health_check_url": "/health",
+    "dependencies": [],
+    "tech_stack": [
+      "Python 3.10+",
+      "FastAPI",
+      "Pydantic",
+      "uvicorn"
+    ],
+    "status": "active",
+    "created_at": "2026-09-30T00:00:00Z"
+  }
+}

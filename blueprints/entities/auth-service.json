@@ -1,0 +1,21 @@
+{
+  "blueprint": "service",
+  "properties": {
+    "name": "auth-service",
+    "description": "User authentication and authorization service. Handles user registration, login, and token validation.",
+    "language": "Python",
+    "owner": "platform-team",
+    "repository_url": "https://github.com/port-agentic-sdlc-demo/auth-service",
+    "port": 8001,
+    "health_check_url": "/health",
+    "dependencies": [],
+    "tech_stack": [
+      "Python 3.10+",
+      "FastAPI",
+      "Pydantic",
+      "uvicorn"
+    ],
+    "status": "active",
+    "created_at": "2026-09-30T00:00:00Z"
+  }
+}
