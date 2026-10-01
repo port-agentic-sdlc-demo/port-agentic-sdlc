@@ -23,8 +23,10 @@ This is the **Core Agent Foundation** for orchestrating an Agentic SDLC through 
 
 ## Project Structure
 
+**Monorepo containing agents, services, and Port infrastructure:**
+
 ```
-.
+port-agentic-sdlc/
 ├── agents/                      # Agent implementations
 │   ├── __init__.py
 │   ├── base.py                  # BaseAgent class with agent loop
@@ -34,8 +36,17 @@ This is the **Core Agent Foundation** for orchestrating an Agentic SDLC through 
 ├── tools/                       # Tool integrations
 │   ├── __init__.py
 │   └── port_api.py              # Port API client & tool definitions
+├── services/                    # Microservices (Python/FastAPI)
+│   ├── auth-service/            # User authentication
+│   ├── notification-service/    # Notification handling
+│   └── payment-service/         # Payment processing
+├── blueprints/                  # Port infrastructure as code
+│   ├── service.json             # Service blueprint definition
+│   └── entities/                # Service entity configurations
 ├── main.py                      # Demo/test entry point
 ├── requirements.txt             # Python dependencies
+├── .gitignore                   # Prevents credential exposure
+├── .env.example                 # Environment template (commit this)
 └── README.md                    # This file
 ```
 
@@ -65,6 +76,13 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 PORT_BASE_URL=https://api.getport.io  # or your Port instance URL
 PORT_API_TOKEN=your-port-api-token    # Port API token
 ```
+
+⚠️ **SECURITY**: The `.gitignore` file prevents `.env` from being committed. **Never commit API keys or credentials to Git.** If you accidentally commit a key:
+1. Revoke the key immediately in the service (Anthropic dashboard, Port settings)
+2. Generate a new key
+3. Update your `.env` file
+
+Use `.env.example` as a template for new developers without exposing actual credentials.
 
 ## Running the Agents
 
@@ -177,6 +195,30 @@ After validating the core agent loop, the POC will add:
 - Connect Jira
 - Build AI adoption dashboard in Port
 
+## Security
+
+### Protecting Credentials
+
+This project uses `.gitignore` to prevent accidental credential exposure:
+
+**Protected files:**
+- `.env` - API keys, tokens, credentials (never commit)
+- `.env.local` - Local overrides (never commit)
+- `secrets.json`, `credentials.json` - Credential files (never commit)
+
+**Best practices:**
+1. Use `.env.example` as a template showing what variables are needed
+2. Never commit actual `.env` files with real credentials
+3. Use environment variables in CI/CD (GitHub Actions secrets, etc.)
+4. Rotate API keys immediately if accidentally exposed
+5. Use minimal-scope API tokens (only what's needed)
+
+**If you accidentally commit a credential:**
+1. Revoke the credential immediately (Anthropic, Port, etc.)
+2. Generate a replacement
+3. Force-push to remove the commit (for private repos only)
+4. Never attempt to "hide" exposed credentials in later commits
+
 ## Troubleshooting
 
 ### "ModuleNotFoundError: No module named 'anthropic'"
@@ -190,6 +232,11 @@ Run: `pip install -r requirements.txt`
 ### Port API calls failing
 - Verify `PORT_BASE_URL` and `PORT_API_TOKEN` are correct
 - Port API endpoints use mock responses by default for testing
+
+### ".env file not being loaded"
+- Verify `.env` file exists in project root
+- Check that `.env` is not in `.gitignore` (it should be — the .env file itself, not the .env.example)
+- Verify `load_dotenv()` is called in `main.py` before accessing environment variables
 
 ## Key Files to Know
 
