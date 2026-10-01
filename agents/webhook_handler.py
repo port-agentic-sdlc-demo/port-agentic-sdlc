@@ -63,19 +63,43 @@ async def health_check():
 
 
 @app.post("/webhook/action")
-async def handle_action(payload: WebhookPayload, background_tasks: BackgroundTasks):
+async def handle_action(request: Request, background_tasks: BackgroundTasks):
     """
     Handle Port self-service action trigger.
 
     Accepts webhook from Port, spawns appropriate agent in background,
     and returns immediately while agent runs asynchronously.
     """
-    action_run_id = payload.action_run_id
-    action_id = payload.action_id
+    # Extract query parameters from URL
+    action_run_id = request.query_params.get("action_run_id")
+    action_id = request.query_params.get("action_id")
+    blueprint = request.query_params.get("blueprint", "service")
+    entity_id = request.query_params.get("entity_id")
+    trigger = request.query_params.get("trigger", "self-service")
 
     print(f"\n[Webhook] ===== NEW REQUEST =====")
     print(f"[Webhook] action_run_id: {action_run_id}")
     print(f"[Webhook] action_id: {action_id}")
+    print(f"[Webhook] entity_id: {entity_id}")
+
+    if not all([action_run_id, action_id, entity_id]):
+        raise HTTPException(status_code=400, detail="Missing required params: action_run_id, action_id, entity_id")
+
+    # Fetch action input from Port API
+    port_token = os.getenv("PORT_API_TOKEN")
+    port_base_url = os.getenv("PORT_BASE_URL", "https://api.getport.io")
+    input_data = await _fetch_action_input(action_run_id, port_base_url, port_token)
+
+    # Build payload
+    payload = WebhookPayload(
+        action_run_id=action_run_id,
+        action_id=action_id,
+        blueprint=blueprint,
+        entity_id=entity_id,
+        trigger=trigger,
+        input_data=input_data
+    )
+
     print(f"[Webhook] input_data: {payload.input_data}")
 
     # Store action metadata
@@ -241,11 +265,11 @@ Provide detailed findings and recommendations.
 
 
 # Helper Functions
-async def _fetch_action_details(run_id: str, port_base_url: str, port_token: str) -> Optional[Dict[str, Any]]:
-    """Fetch action details from Port API using action run ID."""
+async def _fetch_action_input(run_id: str, port_base_url: str, port_token: str) -> Dict[str, Any]:
+    """Fetch action input from Port API using action run ID."""
     if not port_token:
         print(f"[Webhook] No PORT_API_TOKEN set, skipping Port API call")
-        return {"input": {}, "blueprint": "service"}
+        return {}
 
     try:
         # Call Port API to get action run details
@@ -258,14 +282,12 @@ async def _fetch_action_details(run_id: str, port_base_url: str, port_token: str
         if response.status_code == 200:
             data = response.json()
             run_data = data.get("run", {})
-            return {
-                "input": run_data.get("input", {}),
-                "blueprint": run_data.get("blueprint", "service"),
-                "entity": run_data.get("entity", {})
-            }
+            input_data = run_data.get("input", {})
+            print(f"[Webhook] Fetched input from Port: {input_data}")
+            return input_data
         else:
-            print(f"[Webhook] Port API error: {response.text}")
-            return {"input": {}, "blueprint": "service"}
+            print(f"[Webhook] Port API error: {response.status_code}")
+            return {}
     except Exception as e:
         print(f"[Webhook] Error fetching action details: {str(e)}")
         return {"input": {}, "blueprint": "service"}
