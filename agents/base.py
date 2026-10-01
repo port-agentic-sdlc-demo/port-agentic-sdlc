@@ -23,7 +23,8 @@ class BaseAgent:
         self.system_prompt = system_prompt
         self.client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
         self.port_client = PortAPIClient(base_url=port_base_url, api_token=port_api_token)
-        self.mcp_client = PortMCPClient(api_token=port_api_token)
+        # MCP Client uses client credentials from env (PORT_CLIENT_ID, PORT_CLIENT_SECRET)
+        self.mcp_client = PortMCPClient()
         self.tools = create_port_tools(self.port_client)
         self.tools.append(create_mcp_tool(self.mcp_client))
         self.conversation_history = []
