@@ -1,0 +1,49 @@
+{
+  "identifier": "aiAgent",
+  "title": "AI Agent",
+  "icon": "GPU",
+  "description": "AI agents that operate on services and issues",
+  "schema": {
+    "properties": {
+      "role": {
+        "title": "Role",
+        "type": "string",
+        "enum": ["Architect", "Developer", "Reviewer"],
+        "description": "Functional role of the agent"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string",
+        "description": "LLM backing the agent (e.g., claude-opus-5-5)"
+      },
+      "status": {
+        "title": "Status",
+        "type": "string",
+        "enum": ["ACTIVE", "IDLE", "DISABLED"],
+        "default": "ACTIVE"
+      },
+      "runtime": {
+        "title": "Runtime Environment",
+        "type": "string",
+        "description": "e.g., localhost, Docker, Kubernetes"
+      },
+      "capabilities": {
+        "title": "Capabilities",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "What this agent can do (e.g., 'design', 'implement', 'review')"
+      }
+    },
+    "required": ["role"]
+  },
+  "relations": {
+    "supported_services": {
+      "title": "Supported Services",
+      "target": "service",
+      "required": false,
+      "many": true
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "identifier": "developer-agent",
+  "title": "Developer Agent",
+  "blueprint": "aiAgent",
+  "properties": {
+    "role": "Developer",
+    "model": "claude-opus-5-5",
+    "status": "ACTIVE",
+    "runtime": "localhost",
+    "capabilities": ["implement", "code", "test", "github"]
+  },
+  "relations": {
+    "supported_services": [
+      "e_0nTBufEVeUVC6QjA",
+      "e_TRFLQNS7wcCjfGuc",
+      "e_TF34pBYmkJ04QjUo"
+    ]
+  }
+}

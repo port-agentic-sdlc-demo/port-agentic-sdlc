@@ -1,0 +1,19 @@
+{
+  "identifier": "reviewer-agent",
+  "title": "Reviewer Agent",
+  "blueprint": "aiAgent",
+  "properties": {
+    "role": "Reviewer",
+    "model": "claude-opus-5-5",
+    "status": "ACTIVE",
+    "runtime": "localhost",
+    "capabilities": ["review", "security", "quality", "performance"]
+  },
+  "relations": {
+    "supported_services": [
+      "e_0nTBufEVeUVC6QjA",
+      "e_TRFLQNS7wcCjfGuc",
+      "e_TF34pBYmkJ04QjUo"
+    ]
+  }
+}
