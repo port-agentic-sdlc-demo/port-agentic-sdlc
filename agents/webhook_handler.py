@@ -83,20 +83,23 @@ async def handle_action(request: Request, background_tasks: BackgroundTasks):
     print(f"[Webhook] action_id: {action_id}")
     print(f"[Webhook] entity_id: {entity_id}")
 
-    # Allow running even with null values (Port template vars might not expand)
-    if action_run_id == "null":
-        action_run_id = None
-    if action_id == "null":
-        action_id = "design_service"  # Default based on URL path or generate ID
-    if entity_id == "null":
-        entity_id = None
+    # Port template vars aren't expanding, so generate our own action_run_id
+    if not action_run_id or action_run_id == "null":
+        action_run_id = str(uuid.uuid4())
+        print(f"[Webhook] Generated action_run_id: {action_run_id}")
 
-    # Fetch action input from Port API
+    if not action_id or action_id == "null":
+        action_id = "design_service"  # Default
+
+    if not entity_id or entity_id == "null":
+        entity_id = "unknown"  # Default
+
+    # Fetch action input from Port API (may return empty if action_run_id was generated)
     port_token = os.getenv("PORT_API_TOKEN")
     port_base_url = os.getenv("PORT_BASE_URL", "https://api.getport.io")
     input_data = await _fetch_action_input(action_run_id, port_base_url, port_token)
 
-    # Build payload
+    # Build payload with valid values
     payload = WebhookPayload(
         action_run_id=action_run_id,
         action_id=action_id,
