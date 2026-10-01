@@ -82,7 +82,7 @@ class BaseAgent:
                         print(f"[{self.name}] Calling tool: {tool_name} with input: {json.dumps(tool_input)}")
 
                         # Execute the tool
-                        if tool_name == "port_mcp_query":
+                        if tool_name == "port_catalog_query":
                             result = handle_mcp_tool_call(self.mcp_client, tool_name, tool_input)
                         else:
                             result = handle_port_tool_call(tool_name, tool_input, self.port_client)

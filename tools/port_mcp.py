@@ -1,4 +1,4 @@
-"""Port MCP (Model Context Protocol) client for agent integration."""
+"""Port MCP (Model Context Protocol) client for proper agent integration."""
 
 import os
 import json
@@ -6,157 +6,166 @@ import requests
 from typing import Optional, Dict, Any
 
 
-class PortMCPClient:
-    """Client for querying Port catalog via MCP Server."""
+class PortMCPAuth:
+    """Handle authentication with Port's MCP server."""
 
-    def __init__(self, base_url: str = None, api_token: str = None):
-        self.base_url = base_url or os.getenv("PORT_MCP_URL", "https://mcp.us.getport.io/v1")
-        self.api_token = api_token or os.getenv("PORT_API_TOKEN")
-        self.headers = {
-            "Authorization": f"Bearer {self.api_token}",
+    def __init__(self, client_id: str = None, client_secret: str = None, base_url: str = None):
+        self.client_id = client_id or os.getenv("PORT_CLIENT_ID")
+        self.client_secret = client_secret or os.getenv("PORT_CLIENT_SECRET")
+        self.base_url = base_url or os.getenv("PORT_MCP_URL", "https://mcp.us.port.io/v1")
+        self.access_token = None
+        self.token_expires_in = 0
+
+    def get_access_token(self) -> Optional[str]:
+        """Get a Bearer token from Port's MCP token endpoint."""
+        if not self.client_id or not self.client_secret:
+            raise ValueError("PORT_CLIENT_ID and PORT_CLIENT_SECRET must be set")
+
+        try:
+            token_endpoint = f"{self.base_url}/token"
+            response = requests.post(
+                token_endpoint,
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=10,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                self.access_token = data.get("access_token")
+                self.token_expires_in = data.get("expires_in", 10800)
+                return self.access_token
+            else:
+                raise Exception(f"Failed to get token: {response.status_code} - {response.text}")
+
+        except Exception as e:
+            raise Exception(f"MCP Token error: {str(e)}")
+
+
+class PortMCPClient:
+    """Client for connecting to Port's MCP Server."""
+
+    def __init__(
+        self,
+        client_id: str = None,
+        client_secret: str = None,
+        base_url: str = None,
+    ):
+        self.base_url = base_url or os.getenv("PORT_MCP_URL", "https://mcp.us.port.io/v1")
+        self.auth = PortMCPAuth(client_id, client_secret, self.base_url)
+        self.access_token = None
+        self._refresh_token()
+
+    def _refresh_token(self):
+        """Get a fresh access token."""
+        self.access_token = self.auth.get_access_token()
+
+    def _get_headers(self) -> Dict[str, str]:
+        """Get headers for MCP requests."""
+        return {
+            "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
         }
 
-    def query(self, question: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def query_catalog(self, question: str) -> str:
         """
-        Query Port catalog using natural language via MCP Server.
+        Query Port's catalog using the MCP server.
+
+        This method communicates with Port's MCP server to answer natural language
+        questions about the software catalog.
 
         Args:
             question: Natural language question about the catalog
-            context: Optional context (service name, blueprint, etc.)
 
         Returns:
-            Response from Port MCP Server
+            Response from Port's catalog query
         """
         try:
+            # Port's MCP server provides a catalog query tool
+            # We call it through the standard MCP protocol
             payload = {
-                "query": question,
+                "method": "tools/call",
+                "params": {
+                    "name": "port_search_catalog",
+                    "arguments": {
+                        "query": question,
+                    }
+                }
             }
-            if context:
-                payload["context"] = context
 
-            # Try different endpoint formats
-            endpoints = [
-                f"{self.base_url}/query",           # Standard format
-                f"{self.base_url}/messages",        # MCP standard
-                f"{self.base_url.rsplit('/v1', 1)[0]}/catalog/query",  # Catalog endpoint
-            ]
+            response = requests.post(
+                f"{self.base_url}/messages",
+                json=payload,
+                headers=self._get_headers(),
+                timeout=30,
+            )
 
-            for endpoint in endpoints:
-                try:
-                    response = requests.post(
-                        endpoint,
-                        json=payload,
-                        headers=self.headers,
-                        timeout=10,
-                    )
-
-                    if response.status_code == 200:
-                        return response.json().get("result", "No result returned")
-                    elif response.status_code != 404:
-                        return f"MCP error at {endpoint}: {response.status_code} - {response.text[:200]}"
-                except requests.exceptions.RequestException:
-                    continue
-
-            return f"MCP endpoints not found. Tried: {', '.join(endpoints)}"
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("result", "No result returned")
+            elif response.status_code == 401:
+                # Token might have expired, refresh and retry
+                self._refresh_token()
+                return self.query_catalog(question)
+            else:
+                return f"MCP Query error: {response.status_code} - {response.text[:200]}"
 
         except Exception as e:
             return f"Error querying Port MCP: {str(e)}"
 
     def list_services(self) -> str:
-        """List all services in the catalog."""
-        return self.query("List all services in the catalog with their names, descriptions, and tech stacks")
+        """List all services in the catalog via MCP."""
+        return self.query_catalog(
+            "List all services in the Port catalog with their names, descriptions, owners, and tech stacks"
+        )
 
     def get_service_context(self, service_name: str) -> str:
-        """Get full context about a specific service."""
-        return self.query(
-            f"Get complete details about the {service_name} service including its dependencies, tech stack, owner, and status",
-            context={"service": service_name}
+        """Get full context about a service via MCP."""
+        return self.query_catalog(
+            f"Get detailed information about the {service_name} service including its dependencies, "
+            f"tech stack, owner, status, and repository"
         )
 
     def get_architecture_patterns(self) -> str:
-        """Get architectural patterns from existing services."""
-        return self.query(
-            "What are the common architectural patterns used across services in this catalog? "
-            "List tech stacks, deployment patterns, communication methods, and best practices observed"
+        """Get architecture patterns from existing services via MCP."""
+        return self.query_catalog(
+            "What are the common architectural patterns, tech stacks, deployment methods, and best practices "
+            "used across all services in the catalog?"
         )
-
-    def search_catalog(self, query: str) -> str:
-        """Search the catalog for entities matching a query."""
-        return self.query(
-            f"Search the catalog for: {query}",
-            context={"search_type": "general"}
-        )
-
-    def debug_endpoints(self) -> str:
-        """Test different MCP endpoint formats to find the correct one."""
-        test_payload = {"query": "List all services"}
-        endpoints_to_test = [
-            f"{self.base_url}/query",
-            f"{self.base_url}/messages",
-            f"{self.base_url}/catalog",
-            f"{self.base_url}/entities",
-            f"{self.base_url.replace('/v1', '')}/query",
-            "https://api.us.getport.io/v1/mcp/query",
-        ]
-
-        results = []
-        for endpoint in endpoints_to_test:
-            try:
-                response = requests.post(
-                    endpoint,
-                    json=test_payload,
-                    headers=self.headers,
-                    timeout=5,
-                )
-                results.append(f"{endpoint}: {response.status_code}")
-            except Exception as e:
-                results.append(f"{endpoint}: ERROR ({str(e)[:50]})")
-
-        return "\n".join(results)
 
 
 def create_mcp_tool(mcp_client: PortMCPClient):
     """Create a tool definition for Claude to use MCP queries."""
     return {
-        "name": "port_mcp_query",
-        "description": "Query Port's catalog using natural language via MCP Server. Use this for understanding services, architecture, and catalog context.",
+        "name": "port_catalog_query",
+        "description": "Query Port's software catalog using the MCP (Model Context Protocol) server. "
+        "Use this to understand services, architecture patterns, dependencies, and best practices.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "question": {
                     "type": "string",
-                    "description": "Natural language question about the Port catalog (e.g., 'What services depend on auth-service?')",
-                },
-                "query_type": {
-                    "type": "string",
-                    "enum": ["list_services", "service_context", "architecture_patterns", "search", "general"],
-                    "description": "Type of query to perform",
+                    "description": "Natural language question about the Port catalog "
+                    "(e.g., 'What services exist?', 'What tech stacks are used?', 'What dependencies does auth-service have?')",
                 }
             },
-            "required": ["question", "query_type"],
+            "required": ["question"],
         },
     }
 
 
 def handle_mcp_tool_call(mcp_client: PortMCPClient, tool_name: str, tool_input: Dict[str, Any]) -> str:
     """Handle MCP tool calls from Claude."""
-    if tool_name != "port_mcp_query":
+    if tool_name != "port_catalog_query":
         return f"Unknown tool: {tool_name}"
 
     question = tool_input.get("question", "")
-    query_type = tool_input.get("query_type", "general")
+    if not question:
+        return "No question provided"
 
-    if query_type == "list_services":
-        result = mcp_client.list_services()
-    elif query_type == "service_context":
-        # Extract service name from question
-        result = mcp_client.get_service_context(question)
-    elif query_type == "architecture_patterns":
-        result = mcp_client.get_architecture_patterns()
-    elif query_type == "search":
-        result = mcp_client.search_catalog(question)
-    else:
-        result = mcp_client.query(question)
-
+    result = mcp_client.query_catalog(question)
     return result
