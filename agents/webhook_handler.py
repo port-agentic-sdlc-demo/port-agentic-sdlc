@@ -3,13 +3,15 @@
 Receives action triggers from Port and spawns appropriate agents.
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from pydantic import BaseModel, ValidationError
 from typing import Optional, Dict, Any
 import json
 import uuid
 from datetime import datetime
 import asyncio
+import os
+import requests
 
 from agents import ArchitectAgent, DeveloperAgent, ReviewerAgent
 
@@ -61,20 +63,50 @@ async def health_check():
 
 
 @app.post("/webhook/action")
-async def handle_action(payload: WebhookPayload, background_tasks: BackgroundTasks):
+async def handle_action(request: Request, background_tasks: BackgroundTasks):
     """
     Handle Port self-service action trigger.
 
     Accepts webhook from Port, spawns appropriate agent in background,
     and returns immediately while agent runs asynchronously.
     """
-    action_run_id = payload.action_run_id
-    action_id = payload.action_id
+    # Extract query parameters from URL
+    run_id = request.query_params.get("run_id")
+    entity_id = request.query_params.get("entity_id")
+    action_id = request.query_params.get("action_id")
+
+    print(f"\n[Webhook] ===== NEW REQUEST =====")
+    print(f"[Webhook] run_id: {run_id}")
+    print(f"[Webhook] entity_id: {entity_id}")
+    print(f"[Webhook] action_id: {action_id}")
+
+    if not all([run_id, entity_id, action_id]):
+        raise HTTPException(status_code=400, detail="Missing required query params: run_id, entity_id, action_id")
+
+    # Query Port API to get full action details including user input
+    port_token = os.getenv("PORT_API_TOKEN")
+    port_base_url = os.getenv("PORT_BASE_URL", "https://api.getport.io")
+
+    # Fetch action run details from Port
+    action_details = await _fetch_action_details(run_id, port_base_url, port_token)
+    if not action_details:
+        raise HTTPException(status_code=500, detail="Failed to fetch action details from Port")
+
+    # Build WebhookPayload from Port data
+    payload = WebhookPayload(
+        action_run_id=run_id,
+        action_id=action_id,
+        blueprint=action_details.get("blueprint", "service"),
+        entity_id=entity_id,
+        trigger="self-service",
+        input_data=action_details.get("input", {}),
+        port_url="https://app.us.port.io"
+    )
 
     # Store action metadata
-    action_results[action_run_id] = {
+    action_results[run_id] = {
         "action_id": action_id,
-        "entity_id": payload.entity_id,
+        "entity_id": entity_id,
         "status": "running",
         "started_at": datetime.now().isoformat(),
         "summary": "Agent is processing your request...",
@@ -84,11 +116,11 @@ async def handle_action(payload: WebhookPayload, background_tasks: BackgroundTas
     agent_task = _route_to_agent(action_id, payload)
 
     # Run agent in background
-    background_tasks.add_task(_execute_agent, action_run_id, agent_task, payload)
+    background_tasks.add_task(_execute_agent, run_id, agent_task, payload)
 
     return {
         "ok": True,
-        "action_run_id": action_run_id,
+        "action_run_id": run_id,
         "message": "Action queued for processing",
     }
 
@@ -234,6 +266,36 @@ Provide detailed findings and recommendations.
 
 
 # Helper Functions
+async def _fetch_action_details(run_id: str, port_base_url: str, port_token: str) -> Optional[Dict[str, Any]]:
+    """Fetch action details from Port API using action run ID."""
+    if not port_token:
+        print(f"[Webhook] No PORT_API_TOKEN set, skipping Port API call")
+        return {"input": {}, "blueprint": "service"}
+
+    try:
+        # Call Port API to get action run details
+        url = f"{port_base_url}/v1/actions/runs/{run_id}"
+        headers = {"Authorization": f"Bearer {port_token}"}
+        response = requests.get(url, headers=headers, timeout=10)
+
+        print(f"[Webhook] Port API call: {url} -> {response.status_code}")
+
+        if response.status_code == 200:
+            data = response.json()
+            run_data = data.get("run", {})
+            return {
+                "input": run_data.get("input", {}),
+                "blueprint": run_data.get("blueprint", "service"),
+                "entity": run_data.get("entity", {})
+            }
+        else:
+            print(f"[Webhook] Port API error: {response.text}")
+            return {"input": {}, "blueprint": "service"}
+    except Exception as e:
+        print(f"[Webhook] Error fetching action details: {str(e)}")
+        return {"input": {}, "blueprint": "service"}
+
+
 def _route_to_agent(action_id: str, payload: WebhookPayload) -> AgentTask:
     """Route action to appropriate agent task based on action_id."""
     action_map = {
