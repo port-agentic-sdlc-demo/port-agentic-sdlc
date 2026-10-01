@@ -9,26 +9,21 @@
   "invocationMethod": {
     "type": "WEBHOOK",
     "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
-    "method": "POST",
-    "synchronized": false
+    "method": "POST"
   },
-  "userProperties": {
-    "required": ["jira_ticket", "architecture"],
+  "inputs": {
     "properties": {
       "jira_ticket": {
-        "type": "string",
         "title": "Jira Ticket",
-        "description": "Ticket ID and description (e.g., ONBOARD-42: Implement User Profile Service)",
-        "icon": "FileText"
+        "type": "string",
+        "description": "Ticket ID and description"
       },
       "architecture": {
-        "type": "string",
         "title": "Approved Architecture",
-        "description": "The architecture design approved by the team",
-        "icon": "Share2"
+        "type": "string",
+        "description": "The architecture design approved by the team"
       }
-    }
-  },
-  "blueprintId": "service",
-  "automations": []
+    },
+    "required": ["jira_ticket", "architecture"]
+  }
 }

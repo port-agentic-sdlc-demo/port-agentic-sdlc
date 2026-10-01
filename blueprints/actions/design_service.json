@@ -9,26 +9,21 @@
   "invocationMethod": {
     "type": "WEBHOOK",
     "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
-    "method": "POST",
-    "synchronized": false
+    "method": "POST"
   },
-  "userProperties": {
-    "required": ["feature_name", "requirements"],
+  "inputs": {
     "properties": {
       "feature_name": {
-        "type": "string",
         "title": "Service Name",
-        "description": "Name of the service to design (e.g., User Profile Service)",
-        "icon": "Layers"
+        "type": "string",
+        "description": "Name of the service to design"
       },
       "requirements": {
-        "type": "string",
         "title": "Requirements",
-        "description": "Describe what the service should do and any constraints",
-        "icon": "FileText"
+        "type": "string",
+        "description": "Describe what the service should do"
       }
-    }
-  },
-  "blueprintId": "service",
-  "automations": []
+    },
+    "required": ["feature_name", "requirements"]
+  }
 }

@@ -9,20 +9,16 @@
   "invocationMethod": {
     "type": "WEBHOOK",
     "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
-    "method": "POST",
-    "synchronized": false
+    "method": "POST"
   },
-  "userProperties": {
-    "required": ["pr_url"],
+  "inputs": {
     "properties": {
       "pr_url": {
-        "type": "string",
         "title": "Pull Request URL",
-        "description": "Full GitHub PR URL (e.g., https://github.com/org/repo/pull/123)",
-        "icon": "Link"
+        "type": "string",
+        "description": "Full GitHub PR URL"
       }
-    }
-  },
-  "blueprintId": "service",
-  "automations": []
+    },
+    "required": ["pr_url"]
+  }
 }
