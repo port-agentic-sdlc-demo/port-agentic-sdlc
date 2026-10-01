@@ -20,7 +20,16 @@
   },
   "invocationMethod": {
     "type": "WEBHOOK",
-    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action?run_id={{ run.id }}&entity_id={{ entity.identifier }}&action_id={{ action.identifier }}"
+    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
+    "method": "POST",
+    "body": {
+      "action_run_id": "{{ run.id }}",
+      "action_id": "{{ action.identifier }}",
+      "blueprint": "{{ entity.blueprint }}",
+      "entity_id": "{{ entity.identifier }}",
+      "trigger": "{{ trigger.type }}",
+      "input_data": "{{ action.input }}"
+    }
   },
   "publish": true
 }

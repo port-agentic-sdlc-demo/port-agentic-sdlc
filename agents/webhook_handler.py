@@ -63,50 +63,25 @@ async def health_check():
 
 
 @app.post("/webhook/action")
-async def handle_action(request: Request, background_tasks: BackgroundTasks):
+async def handle_action(payload: WebhookPayload, background_tasks: BackgroundTasks):
     """
     Handle Port self-service action trigger.
 
     Accepts webhook from Port, spawns appropriate agent in background,
     and returns immediately while agent runs asynchronously.
     """
-    # Extract query parameters from URL
-    run_id = request.query_params.get("run_id")
-    entity_id = request.query_params.get("entity_id")
-    action_id = request.query_params.get("action_id")
+    action_run_id = payload.action_run_id
+    action_id = payload.action_id
 
     print(f"\n[Webhook] ===== NEW REQUEST =====")
-    print(f"[Webhook] run_id: {run_id}")
-    print(f"[Webhook] entity_id: {entity_id}")
+    print(f"[Webhook] action_run_id: {action_run_id}")
     print(f"[Webhook] action_id: {action_id}")
-
-    if not all([run_id, entity_id, action_id]):
-        raise HTTPException(status_code=400, detail="Missing required query params: run_id, entity_id, action_id")
-
-    # Query Port API to get full action details including user input
-    port_token = os.getenv("PORT_API_TOKEN")
-    port_base_url = os.getenv("PORT_BASE_URL", "https://api.getport.io")
-
-    # Fetch action run details from Port
-    action_details = await _fetch_action_details(run_id, port_base_url, port_token)
-    if not action_details:
-        raise HTTPException(status_code=500, detail="Failed to fetch action details from Port")
-
-    # Build WebhookPayload from Port data
-    payload = WebhookPayload(
-        action_run_id=run_id,
-        action_id=action_id,
-        blueprint=action_details.get("blueprint", "service"),
-        entity_id=entity_id,
-        trigger="self-service",
-        input_data=action_details.get("input", {}),
-        port_url="https://app.us.port.io"
-    )
+    print(f"[Webhook] input_data: {payload.input_data}")
 
     # Store action metadata
-    action_results[run_id] = {
+    action_results[action_run_id] = {
         "action_id": action_id,
-        "entity_id": entity_id,
+        "entity_id": payload.entity_id,
         "status": "running",
         "started_at": datetime.now().isoformat(),
         "summary": "Agent is processing your request...",
@@ -116,11 +91,11 @@ async def handle_action(request: Request, background_tasks: BackgroundTasks):
     agent_task = _route_to_agent(action_id, payload)
 
     # Run agent in background
-    background_tasks.add_task(_execute_agent, run_id, agent_task, payload)
+    background_tasks.add_task(_execute_agent, action_run_id, agent_task, payload)
 
     return {
         "ok": True,
-        "action_run_id": run_id,
+        "action_run_id": action_run_id,
         "message": "Action queued for processing",
     }
 
