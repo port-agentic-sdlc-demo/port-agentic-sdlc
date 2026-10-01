@@ -1,4 +1,25 @@
-# Agentic SDLC POC - Core Agent Foundation
+# Agentic SDLC POC - Full Implementation
+
+Complete proof-of-concept for orchestrating an Agentic SDLC through Port. This monorepo contains the full pipeline from agent foundation through Port integration.
+
+## Quick Start
+
+**Phase 1: Core Agents** (Foundation - Done ✅)
+- Read: [QUICKSTART.md](QUICKSTART.md)
+- Run agents locally: `python main.py architect`
+
+**Phase 2: Port Integration** (Web Hooks + Actions - Done ✅)
+- Read: [PHASE2_COMPLETE_SETUP.md](PHASE2_COMPLETE_SETUP.md)
+- Set up ngrok, import actions, test end-to-end
+
+**Phase 3+: Production** (Deployment, Enhancements)
+- Deploy webhook handler to cloud
+- Add GitHub/Jira integration
+- Monitor and optimize
+
+---
+
+## Overview
 
 This is the **Core Agent Foundation** for orchestrating an Agentic SDLC through Port. It provides three specialized Claude agents that can query Port's software catalog and execute intelligent workflows across the development lifecycle.
 
@@ -42,12 +63,24 @@ port-agentic-sdlc/
 │   └── payment-service/         # Payment processing
 ├── blueprints/                  # Port infrastructure as code
 │   ├── service.json             # Service blueprint definition
-│   └── entities/                # Service entity configurations
+│   ├── entities/                # Service entity configurations
+│   └── actions/                 # Self-service action definitions
+│       ├── design_service.json
+│       ├── implement_feature.json
+│       └── review_code.json
+├── agents/                      # (continued above)
+│   └── webhook_handler.py       # Webhook receiver for Port
 ├── main.py                      # Demo/test entry point
+├── run_webhook.py               # Webhook handler startup script
+├── test_webhook.py              # Local webhook testing
 ├── requirements.txt             # Python dependencies
 ├── .gitignore                   # Prevents credential exposure
 ├── .env.example                 # Environment template (commit this)
-└── README.md                    # This file
+├── README.md                    # This file
+├── QUICKSTART.md                # 5-min getting started
+├── WEBHOOK_HANDLER.md           # Webhook API docs
+├── PHASE2_COMPLETE_SETUP.md     # Full integration guide
+└── PHASE2_SETUP.md              # (deprecated, use PHASE2_COMPLETE_SETUP.md)
 ```
 
 ## Setup
