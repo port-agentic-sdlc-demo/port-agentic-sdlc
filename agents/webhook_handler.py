@@ -78,12 +78,18 @@ async def handle_action(request: Request, background_tasks: BackgroundTasks):
     trigger = request.query_params.get("trigger", "self-service")
 
     print(f"\n[Webhook] ===== NEW REQUEST =====")
+    print(f"[Webhook] Headers: {dict(request.headers)}")
     print(f"[Webhook] action_run_id: {action_run_id}")
     print(f"[Webhook] action_id: {action_id}")
     print(f"[Webhook] entity_id: {entity_id}")
 
-    if not all([action_run_id, action_id, entity_id]):
-        raise HTTPException(status_code=400, detail="Missing required params: action_run_id, action_id, entity_id")
+    # Allow running even with null values (Port template vars might not expand)
+    if action_run_id == "null":
+        action_run_id = None
+    if action_id == "null":
+        action_id = "design_service"  # Default based on URL path or generate ID
+    if entity_id == "null":
+        entity_id = None
 
     # Fetch action input from Port API
     port_token = os.getenv("PORT_API_TOKEN")
@@ -350,12 +356,33 @@ async def _execute_agent(action_run_id: str, agent_task: AgentTask, payload: Web
 
 async def _report_to_port(payload: WebhookPayload, result: ActionResult):
     """Report action result back to Port."""
-    # This would call Port API to update action status
-    # For now, just log it
     print(f"[Webhook] Reporting to Port: {result.action_run_id} = {result.status}")
     print(f"[Webhook] Summary: {result.summary}")
-    if result.output:
-        print(f"[Webhook] Output: {json.dumps(result.output, indent=2)}")
+
+    port_token = os.getenv("PORT_API_TOKEN")
+    port_base_url = os.getenv("PORT_BASE_URL", "https://api.getport.io")
+
+    if not port_token or not result.action_run_id:
+        print(f"[Webhook] Skipping Port API update (missing token or action_run_id)")
+        return
+
+    try:
+        # Call Port API to update action status
+        url = f"{port_base_url}/v1/actions/runs/{result.action_run_id}/status"
+        headers = {"Authorization": f"Bearer {port_token}", "Content-Type": "application/json"}
+        body = {
+            "status": result.status,
+            "summary": result.summary,
+            "output": result.output or {}
+        }
+
+        response = requests.patch(url, json=body, headers=headers, timeout=10)
+        print(f"[Webhook] Port API status update: {url} -> {response.status_code}")
+
+        if response.status_code not in [200, 204]:
+            print(f"[Webhook] Port API error: {response.text}")
+    except Exception as e:
+        print(f"[Webhook] Error reporting to Port: {str(e)}")
 
 
 def _detect_actual_status(result: ActionResult) -> str:
