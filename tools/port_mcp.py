@@ -35,17 +35,30 @@ class PortMCPClient:
             if context:
                 payload["context"] = context
 
-            response = requests.post(
-                f"{self.base_url}/query",
-                json=payload,
-                headers=self.headers,
-                timeout=30,
-            )
+            # Try different endpoint formats
+            endpoints = [
+                f"{self.base_url}/query",           # Standard format
+                f"{self.base_url}/messages",        # MCP standard
+                f"{self.base_url.rsplit('/v1', 1)[0]}/catalog/query",  # Catalog endpoint
+            ]
 
-            if response.status_code == 200:
-                return response.json().get("result", "No result returned")
-            else:
-                return f"MCP Query error: {response.status_code} - {response.text}"
+            for endpoint in endpoints:
+                try:
+                    response = requests.post(
+                        endpoint,
+                        json=payload,
+                        headers=self.headers,
+                        timeout=10,
+                    )
+
+                    if response.status_code == 200:
+                        return response.json().get("result", "No result returned")
+                    elif response.status_code != 404:
+                        return f"MCP error at {endpoint}: {response.status_code} - {response.text[:200]}"
+                except requests.exceptions.RequestException:
+                    continue
+
+            return f"MCP endpoints not found. Tried: {', '.join(endpoints)}"
 
         except Exception as e:
             return f"Error querying Port MCP: {str(e)}"
@@ -97,6 +110,34 @@ def create_mcp_tool(mcp_client: PortMCPClient):
             "required": ["question", "query_type"],
         },
     }
+
+
+    def debug_endpoints(self) -> str:
+        """Test different MCP endpoint formats to find the correct one."""
+        test_payload = {"query": "List all services"}
+        endpoints_to_test = [
+            f"{self.base_url}/query",
+            f"{self.base_url}/messages",
+            f"{self.base_url}/catalog",
+            f"{self.base_url}/entities",
+            f"{self.base_url.replace('/v1', '')}/query",
+            "https://api.us.getport.io/v1/mcp/query",
+        ]
+
+        results = []
+        for endpoint in endpoints_to_test:
+            try:
+                response = requests.post(
+                    endpoint,
+                    json=test_payload,
+                    headers=self.headers,
+                    timeout=5,
+                )
+                results.append(f"{endpoint}: {response.status_code}")
+            except Exception as e:
+                results.append(f"{endpoint}: ERROR ({str(e)[:50]})")
+
+        return "\n".join(results)
 
 
 def handle_mcp_tool_call(mcp_client: PortMCPClient, tool_name: str, tool_input: Dict[str, Any]) -> str:
