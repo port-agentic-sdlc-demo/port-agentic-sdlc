@@ -88,30 +88,6 @@ class PortMCPClient:
             context={"search_type": "general"}
         )
 
-
-def create_mcp_tool(mcp_client: PortMCPClient):
-    """Create a tool definition for Claude to use MCP queries."""
-    return {
-        "name": "port_mcp_query",
-        "description": "Query Port's catalog using natural language via MCP Server. Use this for understanding services, architecture, and catalog context.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "question": {
-                    "type": "string",
-                    "description": "Natural language question about the Port catalog (e.g., 'What services depend on auth-service?')",
-                },
-                "query_type": {
-                    "type": "string",
-                    "enum": ["list_services", "service_context", "architecture_patterns", "search", "general"],
-                    "description": "Type of query to perform",
-                }
-            },
-            "required": ["question", "query_type"],
-        },
-    }
-
-
     def debug_endpoints(self) -> str:
         """Test different MCP endpoint formats to find the correct one."""
         test_payload = {"query": "List all services"}
@@ -138,6 +114,29 @@ def create_mcp_tool(mcp_client: PortMCPClient):
                 results.append(f"{endpoint}: ERROR ({str(e)[:50]})")
 
         return "\n".join(results)
+
+
+def create_mcp_tool(mcp_client: PortMCPClient):
+    """Create a tool definition for Claude to use MCP queries."""
+    return {
+        "name": "port_mcp_query",
+        "description": "Query Port's catalog using natural language via MCP Server. Use this for understanding services, architecture, and catalog context.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Natural language question about the Port catalog (e.g., 'What services depend on auth-service?')",
+                },
+                "query_type": {
+                    "type": "string",
+                    "enum": ["list_services", "service_context", "architecture_patterns", "search", "general"],
+                    "description": "Type of query to perform",
+                }
+            },
+            "required": ["question", "query_type"],
+        },
+    }
 
 
 def handle_mcp_tool_call(mcp_client: PortMCPClient, tool_name: str, tool_input: Dict[str, Any]) -> str:
