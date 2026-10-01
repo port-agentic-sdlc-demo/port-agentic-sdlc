@@ -18,14 +18,19 @@ class PortAPIClient:
         }
 
     def get_entity(self, entity_id: str, blueprint: str = "service") -> Dict[str, Any]:
-        """Fetch a single entity from Port's catalog."""
+        """Fetch a single entity from Port's catalog by searching and filtering."""
         try:
-            endpoint = f"{self.base_url}/v1/blueprints/{blueprint}/entities?identifier={entity_id}"
+            # Use search_entities and filter locally since Port's single-entity endpoint doesn't support query params
+            endpoint = f"{self.base_url}/v1/blueprints/{blueprint}/entities"
             response = requests.get(endpoint, headers=self.headers, timeout=10)
             response.raise_for_status()
             data = response.json()
             if data.get("ok") and data.get("entities"):
-                return data["entities"][0]
+                entities = data["entities"]
+                # Search by identifier or name property
+                for entity in entities:
+                    if entity.get("identifier") == entity_id or entity.get("properties", {}).get("name") == entity_id:
+                        return entity
             return {"error": "Entity not found", "entity_id": entity_id}
         except Exception as e:
             return {"error": str(e), "entity_id": entity_id}
