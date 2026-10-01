@@ -25,7 +25,8 @@
   },
   "invocationMethod": {
     "type": "WEBHOOK",
-    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action?action_run_id={{ run.id }}&action_id={{ action.identifier }}&blueprint={{ entity.blueprint }}&entity_id={{ entity.identifier }}&trigger={{ trigger.type }}"
+    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action?action_run_id={{ run.id }}&action_id={{ action.identifier }}&blueprint={{ entity.blueprint }}&entity_id={{ entity.identifier }}&trigger={{ trigger.type }}",
+    "synchronized": true
   },
   "publish": true
 }
