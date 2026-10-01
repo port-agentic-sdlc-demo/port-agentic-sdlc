@@ -63,7 +63,7 @@ async def health_check():
 
 
 @app.post("/webhook/action")
-async def handle_action(request: Request):
+async def handle_action(request: Request, background_tasks: BackgroundTasks):
     """
     Handle Port self-service action trigger.
 
@@ -123,25 +123,15 @@ async def handle_action(request: Request):
     # Route to appropriate agent based on action_id
     agent_task = _route_to_agent(action_id, payload)
 
-    # Run agent and get result
-    print(f"[Webhook] Running agent synchronously...")
-    result = await agent_task.execute()
+    # Run agent in background (Port timeout is too strict for sync execution)
+    background_tasks.add_task(_execute_agent, action_run_id, agent_task, payload)
 
-    # Update our results store
-    action_results[action_run_id].update({
-        "status": result.status,
-        "summary": result.summary,
-        "output": result.output,
-        "completed_at": datetime.now().isoformat(),
-    })
-
-    # Return immediately (before reporting to Port to avoid timeout)
+    # Return immediately to avoid Port timeout
     return {
         "ok": True,
         "action_run_id": action_run_id,
-        "status": result.status,
-        "summary": result.summary,
-        "output": result.output or {},
+        "message": "Action processing started",
+        "status_url": f"http://localhost:8000/webhook/status/{action_run_id}",
     }
 
 
