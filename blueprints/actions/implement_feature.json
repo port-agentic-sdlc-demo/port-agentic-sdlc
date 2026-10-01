@@ -4,26 +4,27 @@
   "icon": "Code",
   "description": "Use AI to implement a feature following approved architecture",
   "trigger": {
-    "type": "manual"
+    "type": "self-service",
+    "blueprintIdentifier": "service",
+    "userInputs": {
+      "properties": {
+        "jira_ticket": {
+          "type": "string",
+          "title": "Jira Ticket",
+          "description": "Ticket ID and description (e.g., ONBOARD-42: Implement User Profile Service)"
+        },
+        "architecture": {
+          "type": "string",
+          "title": "Approved Architecture",
+          "description": "The architecture design approved by the team"
+        }
+      },
+      "required": ["jira_ticket", "architecture"]
+    }
   },
   "invocationMethod": {
     "type": "WEBHOOK",
-    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
-    "method": "POST"
+    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action"
   },
-  "inputs": {
-    "properties": {
-      "jira_ticket": {
-        "title": "Jira Ticket",
-        "type": "string",
-        "description": "Ticket ID and description"
-      },
-      "architecture": {
-        "title": "Approved Architecture",
-        "type": "string",
-        "description": "The architecture design approved by the team"
-      }
-    },
-    "required": ["jira_ticket", "architecture"]
-  }
+  "publish": true
 }

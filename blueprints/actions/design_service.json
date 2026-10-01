@@ -4,26 +4,27 @@
   "icon": "Blueprint",
   "description": "Use AI to design a new service architecture based on existing services",
   "trigger": {
-    "type": "manual"
+    "type": "self-service",
+    "blueprintIdentifier": "service",
+    "userInputs": {
+      "properties": {
+        "feature_name": {
+          "type": "string",
+          "title": "Service Name",
+          "description": "Name of the service to design (e.g., User Profile Service)"
+        },
+        "requirements": {
+          "type": "string",
+          "title": "Requirements",
+          "description": "Describe what the service should do and any constraints"
+        }
+      },
+      "required": ["feature_name", "requirements"]
+    }
   },
   "invocationMethod": {
     "type": "WEBHOOK",
-    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
-    "method": "POST"
+    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action"
   },
-  "inputs": {
-    "properties": {
-      "feature_name": {
-        "title": "Service Name",
-        "type": "string",
-        "description": "Name of the service to design"
-      },
-      "requirements": {
-        "title": "Requirements",
-        "type": "string",
-        "description": "Describe what the service should do"
-      }
-    },
-    "required": ["feature_name", "requirements"]
-  }
+  "publish": true
 }

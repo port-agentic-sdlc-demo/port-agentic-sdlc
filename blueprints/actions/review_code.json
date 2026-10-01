@@ -4,21 +4,22 @@
   "icon": "CheckCircle",
   "description": "Use AI to review pull requests for security, quality, and performance",
   "trigger": {
-    "type": "manual"
+    "type": "self-service",
+    "blueprintIdentifier": "service",
+    "userInputs": {
+      "properties": {
+        "pr_url": {
+          "type": "string",
+          "title": "Pull Request URL",
+          "description": "Full GitHub PR URL (e.g., https://github.com/org/repo/pull/123)"
+        }
+      },
+      "required": ["pr_url"]
+    }
   },
   "invocationMethod": {
     "type": "WEBHOOK",
-    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action",
-    "method": "POST"
+    "url": "https://removal-letter-cubicle.ngrok-free.dev/webhook/action"
   },
-  "inputs": {
-    "properties": {
-      "pr_url": {
-        "title": "Pull Request URL",
-        "type": "string",
-        "description": "Full GitHub PR URL"
-      }
-    },
-    "required": ["pr_url"]
-  }
+  "publish": true
 }
