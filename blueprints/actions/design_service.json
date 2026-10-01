@@ -4,6 +4,7 @@
   "icon": "Blueprint",
   "description": "Use AI to design a new service architecture based on existing services",
   "trigger": {
+    "operation": "DAY-2",
     "type": "self-service",
     "blueprintIdentifier": "service",
     "userInputs": {

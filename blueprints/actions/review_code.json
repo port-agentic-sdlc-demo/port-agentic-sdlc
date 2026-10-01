@@ -4,6 +4,7 @@
   "icon": "CheckCircle",
   "description": "Use AI to review pull requests for security, quality, and performance",
   "trigger": {
+    "operation": "DAY-2",
     "type": "self-service",
     "blueprintIdentifier": "service",
     "userInputs": {

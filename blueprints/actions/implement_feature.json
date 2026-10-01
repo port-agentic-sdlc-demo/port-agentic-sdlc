@@ -4,6 +4,7 @@
   "icon": "Code",
   "description": "Use AI to implement a feature following approved architecture",
   "trigger": {
+    "operation": "DAY-2",
     "type": "self-service",
     "blueprintIdentifier": "service",
     "userInputs": {
