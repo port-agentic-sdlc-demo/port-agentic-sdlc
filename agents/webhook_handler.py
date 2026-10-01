@@ -63,7 +63,7 @@ async def health_check():
 
 
 @app.post("/webhook/action")
-async def handle_action(request: Request, background_tasks: BackgroundTasks):
+async def handle_action(request: Request):
     """
     Handle Port self-service action trigger.
 
@@ -123,13 +123,17 @@ async def handle_action(request: Request, background_tasks: BackgroundTasks):
     # Route to appropriate agent based on action_id
     agent_task = _route_to_agent(action_id, payload)
 
-    # Run agent in background
-    background_tasks.add_task(_execute_agent, action_run_id, agent_task, payload)
+    # Run agent synchronously (Port waits for response)
+    await _execute_agent(action_run_id, agent_task, payload)
 
+    # Return final result
+    result = action_results.get(action_run_id, {})
     return {
         "ok": True,
         "action_run_id": action_run_id,
-        "message": "Action queued for processing",
+        "status": result.get("status", "success"),
+        "summary": result.get("summary", "Action completed"),
+        "output": result.get("output", {}),
     }
 
 
