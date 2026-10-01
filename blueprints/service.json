@@ -78,5 +78,14 @@
       "owner",
       "repository_url"
     ]
+  },
+  "relations": {
+    "managed_by_agents": {
+      "title": "Managed By Agents",
+      "description": "AI agents that manage this service",
+      "target": "aiAgent",
+      "required": false,
+      "many": true
+    }
   }
 }
