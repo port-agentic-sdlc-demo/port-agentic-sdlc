@@ -1,0 +1,71 @@
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Secrets & credentials
+*.key
+*.pem
+*.p12
+secrets.json
+credentials.json
+.aws/credentials
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+.claude/settings.local.json
+agent_outputs/
+temp/
+*.tmp
+
+# API responses (might contain sensitive data)
+api_response_*.json
