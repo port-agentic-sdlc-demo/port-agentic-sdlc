@@ -1,0 +1,34 @@
+{
+  "identifier": "implement_feature",
+  "title": "Implement Feature",
+  "icon": "Code",
+  "description": "Use AI to implement a feature following approved architecture",
+  "trigger": {
+    "type": "manual"
+  },
+  "invocationMethod": {
+    "type": "WEBHOOK",
+    "url": "https://your-webhook-url.com/webhook/action",
+    "method": "POST",
+    "synchronized": false
+  },
+  "userProperties": {
+    "required": ["jira_ticket", "architecture"],
+    "properties": {
+      "jira_ticket": {
+        "type": "string",
+        "title": "Jira Ticket",
+        "description": "Ticket ID and description (e.g., ONBOARD-42: Implement User Profile Service)",
+        "icon": "FileText"
+      },
+      "architecture": {
+        "type": "string",
+        "title": "Approved Architecture",
+        "description": "The architecture design approved by the team",
+        "icon": "Share2"
+      }
+    }
+  },
+  "blueprintId": "service",
+  "automations": []
+}

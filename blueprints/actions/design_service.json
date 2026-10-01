@@ -1,0 +1,34 @@
+{
+  "identifier": "design_service",
+  "title": "Design Service",
+  "icon": "Blueprint",
+  "description": "Use AI to design a new service architecture based on existing services",
+  "trigger": {
+    "type": "manual"
+  },
+  "invocationMethod": {
+    "type": "WEBHOOK",
+    "url": "https://your-webhook-url.com/webhook/action",
+    "method": "POST",
+    "synchronized": false
+  },
+  "userProperties": {
+    "required": ["feature_name", "requirements"],
+    "properties": {
+      "feature_name": {
+        "type": "string",
+        "title": "Service Name",
+        "description": "Name of the service to design (e.g., User Profile Service)",
+        "icon": "Layers"
+      },
+      "requirements": {
+        "type": "string",
+        "title": "Requirements",
+        "description": "Describe what the service should do and any constraints",
+        "icon": "FileText"
+      }
+    }
+  },
+  "blueprintId": "service",
+  "automations": []
+}
