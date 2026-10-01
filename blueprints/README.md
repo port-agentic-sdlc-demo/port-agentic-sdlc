@@ -16,13 +16,20 @@ blueprints/
 
 ## Setup
 
+### Prerequisites
+
+Set your Port API token:
+```bash
+export PORT_API_TOKEN="your-jwt-token-from-port"
+```
+
 ### 1. Create Service Blueprint
 
 Import `service.json` into Port:
 
 **Via Port API:**
 ```bash
-curl -X POST https://api.us.getport.io/blueprints \
+curl -X POST https://api.us.getport.io/v1/blueprints \
   -H "Authorization: Bearer $PORT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d @service.json
@@ -37,15 +44,27 @@ curl -X POST https://api.us.getport.io/blueprints \
 Once blueprint is created, create entities for each service:
 
 ```bash
-# Create entity from JSON
-curl -X POST https://api.us.getport.io/entities \
+# Create auth-service entity
+curl -X POST https://api.us.getport.io/v1/blueprints/service/entities \
   -H "Authorization: Bearer $PORT_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d @entities/auth-service.json
+
+# Create notification-service entity
+curl -X POST https://api.us.getport.io/v1/blueprints/service/entities \
+  -H "Authorization: Bearer $PORT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @entities/notification-service.json
+
+# Create payment-service entity
+curl -X POST https://api.us.getport.io/v1/blueprints/service/entities \
+  -H "Authorization: Bearer $PORT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @entities/payment-service.json
 ```
 
 Or manually in Port UI:
-- New Entity → Service → Fill in details
+- New Entity → Service → Fill in details for each service
 
 ## Blueprints
 
@@ -92,15 +111,21 @@ Represents a microservice in the catalog.
 
 ## Keeping in Sync
 
-When Port structure changes:
+When Port structure changes, export and commit back to version control:
+
 ```bash
 # Export blueprint from Port
-curl https://api.us.getport.io/blueprints/service \
-  -H "Authorization: Bearer $PORT_API_TOKEN" > service.json
+curl https://api.us.getport.io/v1/blueprints/service \
+  -H "Authorization: Bearer $PORT_API_TOKEN" | jq '.blueprint' > service.json
 
 # Export entities
-curl https://api.us.getport.io/entities \
-  -H "Authorization: Bearer $PORT_API_TOKEN" > entities/all.json
+curl https://api.us.getport.io/v1/blueprints/service/entities \
+  -H "Authorization: Bearer $PORT_API_TOKEN" | jq '.entities[]' > entities/all.json
 ```
 
-Then commit changes to track Port infrastructure history in Git.
+Then commit changes to track Port infrastructure history in Git:
+```bash
+git add blueprints/
+git commit -m "Update Port blueprints and entities"
+git push
+```
