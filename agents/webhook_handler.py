@@ -257,21 +257,28 @@ async def _execute_agent(action_run_id: str, agent_task: AgentTask, payload: Web
         # Run the agent
         result = await agent_task.execute()
 
-        # Store result
+        # Check if agent output contains critical errors
+        detected_status = _detect_actual_status(result)
+        detected_issues = _extract_error_messages(result)
+
+        # Store result with detected status
         action_results[action_run_id] = {
             "action_id": payload.action_id,
             "entity_id": payload.entity_id,
-            "status": result.status,
+            "status": detected_status,
             "summary": result.summary,
             "output": result.output,
             "error": result.error,
             "completed_at": datetime.now().isoformat(),
+            "detected_issues": detected_issues,
         }
 
         # Report back to Port
         await _report_to_port(payload, result)
 
-        print(f"[Webhook] Action {action_run_id} completed with status: {result.status}")
+        print(f"[Webhook] Action {action_run_id} completed with status: {detected_status}")
+        if detected_issues:
+            print(f"[Webhook] Issues detected: {detected_issues}")
 
     except Exception as e:
         print(f"[Webhook] Error executing action {action_run_id}: {str(e)}")
@@ -290,6 +297,70 @@ async def _report_to_port(payload: WebhookPayload, result: ActionResult):
     print(f"[Webhook] Summary: {result.summary}")
     if result.output:
         print(f"[Webhook] Output: {json.dumps(result.output, indent=2)}")
+
+
+def _detect_actual_status(result: ActionResult) -> str:
+    """
+    Detect actual status from agent output.
+
+    Agents may complete "successfully" but their output shows they failed
+    to access required data (e.g., 401 errors from Port).
+    """
+    if result.status == "failure":
+        return "failure"
+
+    output_text = ""
+    if result.output:
+        if isinstance(result.output, dict):
+            output_text = json.dumps(result.output).lower()
+        else:
+            output_text = str(result.output).lower()
+
+    summary_text = (result.summary or "").lower()
+
+    # Check for critical errors
+    critical_errors = [
+        "401 unauthorized",
+        "forbidden",
+        "credentials",
+        "blocked",
+        "couldn't read",
+        "couldn't access",
+        "failed to access",
+        "no data",
+        "couldn't find",
+    ]
+
+    for error in critical_errors:
+        if error in output_text or error in summary_text:
+            return "partial_success"
+
+    return "success"
+
+
+def _extract_error_messages(result: ActionResult) -> list:
+    """Extract error messages from agent output."""
+    errors = []
+
+    if result.error:
+        errors.append(f"Exception: {result.error}")
+
+    if result.output:
+        output_text = ""
+        if isinstance(result.output, dict):
+            output_text = json.dumps(result.output)
+        else:
+            output_text = str(result.output)
+
+        # Extract error patterns
+        if "401" in output_text or "Unauthorized" in output_text:
+            errors.append("Port API authentication failed (401)")
+        if "404" in output_text or "not found" in output_text.lower():
+            errors.append("Required data not found in Port")
+        if "timeout" in output_text.lower():
+            errors.append("Port API timeout")
+
+    return errors
 
 
 if __name__ == "__main__":
