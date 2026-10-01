@@ -5,6 +5,7 @@ import os
 from typing import Optional
 from anthropic import Anthropic
 from tools.port_api import PortAPIClient, create_port_tools, handle_port_tool_call
+from tools.port_mcp import PortMCPClient, create_mcp_tool, handle_mcp_tool_call
 
 
 class BaseAgent:
@@ -22,7 +23,9 @@ class BaseAgent:
         self.system_prompt = system_prompt
         self.client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
         self.port_client = PortAPIClient(base_url=port_base_url, api_token=port_api_token)
+        self.mcp_client = PortMCPClient(api_token=port_api_token)
         self.tools = create_port_tools(self.port_client)
+        self.tools.append(create_mcp_tool(self.mcp_client))
         self.conversation_history = []
 
     def _add_message(self, role: str, content: str):
@@ -79,7 +82,10 @@ class BaseAgent:
                         print(f"[{self.name}] Calling tool: {tool_name} with input: {json.dumps(tool_input)}")
 
                         # Execute the tool
-                        result = handle_port_tool_call(tool_name, tool_input, self.port_client)
+                        if tool_name == "port_mcp_query":
+                            result = handle_mcp_tool_call(self.mcp_client, tool_name, tool_input)
+                        else:
+                            result = handle_port_tool_call(tool_name, tool_input, self.port_client)
                         print(f"[{self.name}] Tool result: {result}")
 
                         tool_results.append({
