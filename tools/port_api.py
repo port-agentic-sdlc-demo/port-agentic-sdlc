@@ -17,28 +17,29 @@ class PortAPIClient:
             "Content-Type": "application/json",
         }
 
-    def get_entity(self, entity_id: str, blueprint: str = None) -> Dict[str, Any]:
+    def get_entity(self, entity_id: str, blueprint: str = "service") -> Dict[str, Any]:
         """Fetch a single entity from Port's catalog."""
         try:
-            endpoint = f"{self.base_url}/entities/{entity_id}"
-            if blueprint:
-                endpoint += f"?blueprint={blueprint}"
+            endpoint = f"{self.base_url}/v1/blueprints/{blueprint}/entities?identifier={entity_id}"
             response = requests.get(endpoint, headers=self.headers, timeout=10)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if data.get("ok") and data.get("entities"):
+                return data["entities"][0]
+            return {"error": "Entity not found", "entity_id": entity_id}
         except Exception as e:
             return {"error": str(e), "entity_id": entity_id}
 
     def search_entities(self, blueprint: str, filter_query: str = None) -> List[Dict[str, Any]]:
         """Search entities by blueprint type (e.g., 'service', 'jira-ticket')."""
         try:
-            endpoint = f"{self.base_url}/search/entities"
-            payload = {"blueprint": blueprint}
-            if filter_query:
-                payload["query"] = filter_query
-            response = requests.post(endpoint, json=payload, headers=self.headers, timeout=10)
+            endpoint = f"{self.base_url}/v1/blueprints/{blueprint}/entities"
+            response = requests.get(endpoint, headers=self.headers, timeout=10)
             response.raise_for_status()
-            return response.json().get("entities", [])
+            data = response.json()
+            if data.get("ok"):
+                return data.get("entities", [])
+            return [{"error": "No entities found"}]
         except Exception as e:
             return [{"error": str(e)}]
 

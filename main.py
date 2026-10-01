@@ -22,15 +22,16 @@ def demo_architect_agent():
     agent = ArchitectAgent()
 
     user_input = """
-    We need to build a new Payment Processing service. The service should:
-    1. Accept payment requests from the API Gateway
-    2. Validate payment details
-    3. Communicate with the Billing service for invoice updates
-    4. Store transaction history in a database
+    We need to build a new User Profile Service for our onboarding flow. The service should:
+    1. Manage user profile data and avatars
+    2. Integrate with the Auth Service to validate users
+    3. Publish events to the Notification Service when profiles are created
+    4. Store profile data and avatar files
+    5. Follow the same patterns as existing services
 
-    Query Port to understand how existing services (like Order Service, Billing Service)
+    Query Port to understand how the Auth Service, Notification Service, and Payment Service
     are structured, what tech stacks they use, and who owns them. Then provide a
-    recommended architecture for the Payment Processing service.
+    recommended architecture for the new User Profile Service that integrates with these.
     """
 
     print(f"\nUser Input:\n{user_input}\n")
