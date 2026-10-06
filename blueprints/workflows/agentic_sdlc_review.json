@@ -1,0 +1,63 @@
+{
+  "identifier": "agentic_sdlc_review",
+  "title": "Agentic Factory: Review PR",
+  "icon": "Github",
+  "description": "When a factory pull request is ingested, dispatch the local Reviewer agent.",
+  "category": "SDLC",
+  "allowAnyoneToViewRuns": true,
+  "nodes": [
+    {
+      "identifier": "trigger",
+      "title": "Pull request created",
+      "config": {
+        "type": "EVENT_TRIGGER",
+        "event": {
+          "type": "ENTITY_CREATED",
+          "blueprintIdentifier": "githubPullRequest"
+        },
+        "condition": {
+          "type": "JQ",
+          "combinator": "or",
+          "expressions": [
+            "(.diff.after.properties.jiraIssueKey // \"\") != \"\"",
+            "(.diff.after.relations.jiraIssue // \"\") != \"\""
+          ]
+        },
+        "published": true
+      },
+      "variables": {},
+      "verbose": true
+    },
+    {
+      "identifier": "call_reviewer",
+      "title": "Dispatch Reviewer",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "{{ .secrets[\"FACTORY_WEBHOOK_URL\"] }}/factory/reviewer",
+        "agent": false,
+        "synchronized": false,
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "jira_key": "{{ .outputs.trigger.diff.after.properties.jiraIssueKey // .outputs.trigger.diff.after.relations.jiraIssue }}",
+          "title": "{{ .outputs.trigger.diff.after.title }}",
+          "pr_url": "{{ .outputs.trigger.diff.after.properties.link }}",
+          "service_path": "",
+          "workflow_run_id": "{{ .workflowRun.identifier }}"
+        },
+        "onTimeout": "continue",
+        "onFailure": "terminate"
+      },
+      "variables": {},
+      "verbose": true
+    }
+  ],
+  "connections": [
+    {
+      "sourceIdentifier": "trigger",
+      "targetIdentifier": "call_reviewer"
+    }
+  ]
+}

@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 if __name__ == "__main__":
-    print("Starting Agentic SDLC Webhook Handler...")
-    print("📡 Listening on http://localhost:8000")
-    print("🔗 POST /webhook/action - receive Port actions")
-    print("📊 GET /webhook/status/{action_run_id} - check action status")
-    print("\nReady to receive Port webhooks!")
+    print("Starting Agentic SDLC Factory Runner...")
+    print("Listening on http://localhost:8000")
+    print("POST /factory/architect|developer|reviewer")
+    print("POST /webhook/action (classic actions)")
+    print("GET  /webhook/status/{run_id}")
 
     uvicorn.run(
         "agents.webhook_handler:app",

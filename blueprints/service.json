@@ -62,7 +62,11 @@
         "title": "Status",
         "type": "string",
         "enum": ["active", "deprecated", "experimental"],
-        "default": "active",
+        "enumColors": {
+          "active": "green",
+          "deprecated": "red",
+          "experimental": "yellow"
+        },
         "description": "Current status of the service"
       },
       "created_at": {
@@ -70,6 +74,27 @@
         "type": "string",
         "format": "date-time",
         "description": "When the service was created"
+      },
+      "path": {
+        "title": "Monorepo Path",
+        "type": "string",
+        "description": "Path inside the monorepo (e.g., services/payment-service)"
+      },
+      "github_repository_id": {
+        "title": "GitHub Repository ID",
+        "type": "string",
+        "description": "GitHub repository name used to relate PRs and workflow runs"
+      },
+      "serviceTier": {
+        "title": "Service Tier",
+        "type": "string",
+        "enum": ["Tier 1", "Tier 2", "Tier 3"],
+        "enumColors": {
+          "Tier 1": "red",
+          "Tier 2": "orange",
+          "Tier 3": "green"
+        },
+        "description": "Criticality tier. Tier 1 requires human-only implementation."
       }
     },
     "required": [
@@ -78,6 +103,10 @@
       "owner",
       "repository_url"
     ]
+  },
+  "ownership": {
+    "type": "Direct",
+    "title": "Owning Teams"
   },
   "relations": {
     "managed_by_agents": {

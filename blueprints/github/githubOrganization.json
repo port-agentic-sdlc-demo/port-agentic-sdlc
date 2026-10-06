@@ -1,0 +1,21 @@
+{
+  "identifier": "githubOrganization",
+  "title": "GitHub Organization",
+  "icon": "Github",
+  "description": "Top-level GitHub organization",
+  "schema": {
+    "properties": {
+      "login": { "title": "Organization Login", "type": "string" },
+      "id": { "title": "Organization ID", "type": "number" },
+      "nodeId": { "title": "Node ID", "type": "string" },
+      "url": { "title": "URL", "type": "string", "format": "url" },
+      "avatarUrl": { "title": "Avatar URL", "type": "string" },
+      "description": { "title": "Description", "type": "string" },
+      "publicRepos": { "title": "Public Repositories", "type": "number" },
+      "createdAt": { "title": "Created At", "type": "string", "format": "date-time" },
+      "updatedAt": { "title": "Updated At", "type": "string", "format": "date-time" }
+    },
+    "required": []
+  },
+  "relations": {}
+}

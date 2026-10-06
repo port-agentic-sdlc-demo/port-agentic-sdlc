@@ -1,0 +1,53 @@
+{
+  "identifier": "githubPullRequest",
+  "title": "GitHub Pull Request",
+  "icon": "Github",
+  "schema": {
+    "properties": {
+      "branch": { "title": "Branch", "type": "string" },
+      "closedAt": { "title": "Closed At", "type": "string", "format": "date-time" },
+      "createdAt": { "title": "Created At", "type": "string", "format": "date-time" },
+      "cycle_time_hours": { "title": "Cycle Time Hours", "type": "number" },
+      "has_assignees": { "title": "Has Assignees", "type": "boolean" },
+      "has_reviewers": { "title": "Has Reviewers", "type": "boolean" },
+      "link": { "title": "Link", "type": "string", "format": "url" },
+      "mergedAt": { "title": "Merged At", "type": "string", "format": "date-time" },
+      "prNumber": { "title": "PR Number", "type": "number" },
+      "status": {
+        "title": "Status",
+        "type": "string",
+        "enum": ["open", "closed", "merged"],
+        "enumColors": { "open": "green", "closed": "red", "merged": "purple" }
+      },
+      "file_change_url": { "title": "File Change URL", "type": "string", "format": "url" },
+      "jiraIssueKey": { "title": "Jira Issue Key", "type": "string" }
+    },
+    "required": []
+  },
+  "relations": {
+    "repository": {
+      "title": "Repository",
+      "target": "githubRepository",
+      "required": false,
+      "many": false
+    },
+    "service": {
+      "title": "Affected Services",
+      "target": "service",
+      "required": false,
+      "many": true
+    },
+    "jiraIssue": {
+      "title": "Jira Issue",
+      "target": "jiraIssue",
+      "required": false,
+      "many": false
+    },
+    "git_hub_creator": {
+      "title": "GitHub Creator",
+      "target": "githubUser",
+      "required": false,
+      "many": false
+    }
+  }
+}

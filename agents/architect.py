@@ -1,44 +1,35 @@
-"""The Architect Agent - scaffolds new services and features with organizational standards."""
+"""Architect Agent - produces a structured implementation plan from catalog context."""
 
 from agents.base import BaseAgent
 
 
-ARCHITECT_SYSTEM_PROMPT = """You are the Enterprise Architect Agent, responsible for scaffolding new microservices and features while ensuring alignment with organizational standards and best practices.
+ARCHITECT_SYSTEM_PROMPT = """You are the Enterprise Architect Agent for an agentic software factory.
 
-Your role:
-1. When given a feature request or new service requirement, use port_catalog_query to understand the existing service ecosystem, tech stacks, and architectural patterns in Port.
-2. Query Port's MCP server for architectural patterns, existing services, and best practices using natural language questions.
-3. Design the new service/feature based on organizational standards. Consider tech stack alignment, dependency patterns, and scalability.
-4. Generate a detailed architecture specification including:
-   - Service boundary and responsibilities
-   - API contracts
-   - Database schema (if applicable)
-   - Dependencies on existing services
-   - Deployment strategy
-5. Provide findings and recommendations as the final response.
+Given a Jira work item, query Port for the related service (and siblings under the same monorepo), then produce a structured implementation plan.
 
-Available tools:
-- port_catalog_query: Query Port's MCP server using natural language (PRIMARY TOOL)
-  - Use natural language questions to ask about services, architecture, patterns, dependencies
-  - Examples: "What are the common architectural patterns?", "List all services and their tech stacks"
-  - The MCP server will intelligently interpret and answer your questions
-- port_search_entities: Direct entity search (fallback)
-- port_get_service_dependencies: Direct dependency lookup (fallback)
+Always:
+1. Call port_search_entities with blueprint "service" if the related service is unclear.
+2. Call port_get_entity / port_get_service_dependencies for the target service.
+3. Infer the service from the ticket text when a relation is missing (auth-service, notification-service, or payment-service).
+4. Write the plan back with port_upsert_entity on blueprint jiraIssue:
+   - architectureSpec: markdown plan
+   - factoryStage: AwaitingApproval
+   - relate service if you resolved it via relations_json {"service": "<id>"}
+5. End with a JSON object only, no surrounding prose:
 
-Guidelines:
-- ALWAYS start by querying Port's MCP server using port_catalog_query.
-- Ask clear, specific questions in natural language.
-- Think like an architect: prioritize consistency, scalability, and organizational alignment over novel solutions.
-- Be thorough in your analysis—query about patterns, dependencies, and current services.
+{
+  "service": "payment-service",
+  "servicePath": "services/payment-service",
+  "constraints": ["..."],
+  "acceptanceCriteria": ["..."],
+  "filesToTouch": ["services/payment-service/src/main.py"],
+  "architectureSpec": "markdown..."
+}
 
-When you complete your work, provide a concise architecture summary and any recommendations for governance or standards updates."""
+Do not invent new microservices unless the ticket explicitly asks. Prefer a small change inside the existing service path.
+"""
+
 
 class ArchitectAgent(BaseAgent):
-    """Agent for service architecture and scaffolding."""
-
     def __init__(self, **kwargs):
-        super().__init__(
-            name="ArchitectAgent",
-            system_prompt=ARCHITECT_SYSTEM_PROMPT,
-            **kwargs
-        )
+        super().__init__(name="ArchitectAgent", system_prompt=ARCHITECT_SYSTEM_PROMPT, **kwargs)

@@ -1,0 +1,198 @@
+{
+  "createMissingRelatedEntities": true,
+  "deleteDependentEntities": true,
+  "resources": [
+    {
+      "kind": "organization",
+      "selector": { "query": "true" },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": ".login",
+            "blueprint": "\"githubOrganization\"",
+            "title": ".login",
+            "properties": {
+              "avatarUrl": ".avatar_url",
+              "createdAt": ".created_at",
+              "description": "if .description then .description else \"\" end",
+              "id": ".id",
+              "login": ".login",
+              "nodeId": ".node_id",
+              "publicRepos": ".public_repos",
+              "updatedAt": ".updated_at",
+              "url": ".url"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "team",
+      "selector": { "query": "true", "members": true },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": ".databaseId | tostring",
+            "blueprint": "\"githubTeam\"",
+            "title": ".name",
+            "properties": {
+              "slug": ".slug",
+              "description": ".description",
+              "link": ".url",
+              "notification_setting": ".notificationSetting"
+            },
+            "relations": {
+              "organization": ".url | capture(\"orgs/(?<org>[^/]+)\") | .org"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "user",
+      "selector": { "query": "true" },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": ".login",
+            "blueprint": "\"githubUser\"",
+            "title": ".login",
+            "properties": {
+              "email": ".email",
+              "login": ".login"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "repository",
+      "selector": {
+        "query": "true",
+        "include": ["teams"],
+        "includedFiles": ["README.md", "CODEOWNERS", ".gitignore"]
+      },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": ".name",
+            "blueprint": "\"githubRepository\"",
+            "title": ".name",
+            "properties": {
+              "codeowners": ".__includedFiles[\"CODEOWNERS\"]",
+              "defaultBranch": ".default_branch",
+              "description": "if .description then .description else \"\" end",
+              "gitignore": ".__includedFiles[\".gitignore\"]",
+              "language": "if .language then .language else \"\" end",
+              "last_push": ".pushed_at",
+              "readme": ".__includedFiles[\"README.md\"]",
+              "url": ".html_url",
+              "visibility": "if .private then \"private\" else \"public\" end"
+            },
+            "relations": {
+              "organization": ".owner.login",
+              "githubTeams": "[.__teams[]?.id | tostring]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "file",
+      "selector": {
+        "query": "true",
+        "files": [
+          {
+            "path": "services/**/service.yml",
+            "organization": "port-agentic-sdlc-demo",
+            "repos": [{ "name": "port-agentic-sdlc" }]
+          }
+        ]
+      },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": ".file.path | split(\"/\") | .[1]",
+            "blueprint": "\"service\"",
+            "title": ".file.content.service_name // (.file.path | split(\"/\") | .[1])",
+            "properties": {
+              "name": ".file.content.service_name",
+              "description": ".file.content.description",
+              "language": ".file.content.language",
+              "owner": ".file.content.owner",
+              "repository_url": ".repo.html_url",
+              "port": ".file.content.port",
+              "health_check_url": ".file.content.health_check_url",
+              "dependencies": ".file.content.dependencies",
+              "tech_stack": ".file.content.tech_stack",
+              "status": ".file.content.status",
+              "path": ".file.content.path",
+              "github_repository_id": ".file.content.github_repository_id // .repo.name",
+              "serviceTier": ".file.content.serviceTier"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "pull-request",
+      "selector": {
+        "query": "true",
+        "maxResults": 300,
+        "since": 90,
+        "states": ["open", "closed"]
+      },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": ".head.repo.name + \"-pr-\" + (.number | tostring)",
+            "blueprint": "\"githubPullRequest\"",
+            "title": ".title",
+            "properties": {
+              "branch": ".head.ref",
+              "closedAt": ".closed_at",
+              "createdAt": ".created_at",
+              "cycle_time_hours": "if .merged_at != null and .created_at != null then ((.merged_at | fromdateiso8601) - (.created_at | fromdateiso8601)) / 3600 else null end",
+              "has_assignees": "(.assignees | length) != 0",
+              "has_reviewers": "(.requested_reviewers | length) != 0",
+              "link": ".html_url",
+              "mergedAt": ".merged_at",
+              "prNumber": ".number",
+              "status": "if .merged_at != null then \"merged\" elif .state == \"closed\" then \"closed\" else \"open\" end",
+              "file_change_url": ".html_url + \"/files\"",
+              "jiraIssueKey": "(.title | capture(\"(?<key>[A-Z][A-Z0-9]+-[0-9]+)\") | .key) // null"
+            },
+            "relations": {
+              "repository": ".head.repo.name",
+              "git_hub_creator": ".user.login",
+              "jiraIssue": "(.title | capture(\"(?<key>[A-Z][A-Z0-9]+-[0-9]+)\") | .key) // null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "workflow",
+      "selector": { "query": "true" },
+      "port": {
+        "entity": {
+          "mappings": {
+            "identifier": "(.url | capture(\"repos/(?<repo>[^/]+/[^/]+)/\") | .repo) + (.id|tostring)",
+            "blueprint": "\"githubWorkflow\"",
+            "title": ".name",
+            "properties": {
+              "createdAt": ".created_at",
+              "link": ".html_url",
+              "path": ".path",
+              "status": ".state",
+              "updatedAt": ".updated_at"
+            },
+            "relations": {
+              "repository": ".url | capture(\"repos/[^/]+/(?<repo>[^/]+)/\") | .repo"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

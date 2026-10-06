@@ -1,0 +1,59 @@
+{
+  "identifier": "jiraIssue",
+  "title": "Jira Issue",
+  "icon": "Jira",
+  "description": "Work item ingested from Jira and orchestrated by the agentic factory",
+  "schema": {
+    "properties": {
+      "url": { "title": "URL", "type": "string", "format": "url" },
+      "status": { "title": "Status", "type": "string" },
+      "issueType": { "title": "Issue Type", "type": "string" },
+      "priority": { "title": "Priority", "type": "string" },
+      "description": { "title": "Description", "type": "string", "format": "markdown" },
+      "labels": {
+        "title": "Labels",
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "createdAt": { "title": "Created At", "type": "string", "format": "date-time" },
+      "updatedAt": { "title": "Updated At", "type": "string", "format": "date-time" },
+      "architectureSpec": {
+        "title": "Architecture Spec",
+        "type": "string",
+        "format": "markdown",
+        "description": "Plan produced by the Architect agent"
+      },
+      "factoryStage": {
+        "title": "Factory Stage",
+        "type": "string",
+        "enum": ["Triage", "Plan", "AwaitingApproval", "Build", "Review", "Done", "Failed"],
+        "enumColors": {
+          "Triage": "lightGray",
+          "Plan": "blue",
+          "AwaitingApproval": "yellow",
+          "Build": "orange",
+          "Review": "purple",
+          "Done": "green",
+          "Failed": "red"
+        }
+      },
+      "prUrl": { "title": "Pull Request URL", "type": "string", "format": "url" },
+      "aiReadinessReason": { "title": "AI Readiness Reason", "type": "string", "format": "markdown" },
+      "reviewVerdict": { "title": "Review Verdict", "type": "string" }
+    },
+    "required": []
+  },
+  "mirrorProperties": {
+    "serviceTier": { "title": "Service Tier", "path": "service.serviceTier" },
+    "repoUrl": { "title": "Repo URL", "path": "service.repository_url" },
+    "servicePath": { "title": "Service Path", "path": "service.path" }
+  },
+  "relations": {
+    "service": {
+      "title": "Related Service",
+      "target": "service",
+      "required": false,
+      "many": false
+    }
+  }
+}

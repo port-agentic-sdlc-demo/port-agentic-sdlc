@@ -1,0 +1,27 @@
+{
+  "identifier": "deployment",
+  "title": "Deployment",
+  "icon": "Deployment",
+  "schema": {
+    "properties": {
+      "createdAt": { "title": "Created At", "type": "string", "format": "date-time" },
+      "deploymentStatus": { "title": "Status", "type": "string" },
+      "environment": { "title": "Environment", "type": "string" }
+    },
+    "required": []
+  },
+  "relations": {
+    "github_pull_request": {
+      "title": "GitHub Pull Request",
+      "target": "githubPullRequest",
+      "required": false,
+      "many": false
+    },
+    "service": {
+      "title": "Service",
+      "target": "service",
+      "required": false,
+      "many": false
+    }
+  }
+}

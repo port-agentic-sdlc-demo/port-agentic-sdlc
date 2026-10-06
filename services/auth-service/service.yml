@@ -1,0 +1,16 @@
+service_name: auth-service
+description: User authentication and authorization service. Handles user registration, login, and token validation.
+language: Python
+owner: platform-team
+github_repository_id: port-agentic-sdlc
+path: services/auth-service
+port: 8001
+health_check_url: /health
+serviceTier: Tier 2
+status: active
+dependencies: []
+tech_stack:
+  - Python 3.10+
+  - FastAPI
+  - Pydantic
+  - uvicorn

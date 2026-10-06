@@ -1,0 +1,18 @@
+service_name: payment-service
+description: Handles payment processing, transactions, and retry logic. Integrates with Notification Service for failure alerts.
+language: Python
+owner: platform-team
+github_repository_id: port-agentic-sdlc
+path: services/payment-service
+port: 8003
+health_check_url: /health
+serviceTier: Tier 2
+status: active
+dependencies:
+  - notification-service
+tech_stack:
+  - Python 3.10+
+  - FastAPI
+  - Pydantic
+  - uvicorn
+  - httpx

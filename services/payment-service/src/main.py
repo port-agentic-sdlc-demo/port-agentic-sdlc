@@ -7,12 +7,40 @@ from enum import Enum
 import uuid
 import httpx
 import asyncio
+import logging
+import time
 
 app = FastAPI(
     title="Payment Service",
     description="Handles payment processing and transactions",
     version="1.0.0"
 )
+
+# Structured logger for the retry flow. Fields are passed via `extra` so a
+# JSON formatter can emit them. No handler/config is installed here.
+logger = logging.getLogger("payment_service.retry")
+
+_MAX_ERROR_MESSAGE_LEN = 200
+
+
+def _safe_log(level: int, event: str, **fields) -> None:
+    """Emit a structured log record. Never raises, so logging can't change payment results."""
+    try:
+        logger.log(level, event, extra={"event": event, **fields})
+    except Exception:
+        pass
+
+
+def _short_error(e: Exception) -> str:
+    """Shortened exception message. Request bodies and payment data are never logged."""
+    try:
+        return str(e)[:_MAX_ERROR_MESSAGE_LEN]
+    except Exception:
+        return ""
+
+
+def _elapsed_ms(start: float) -> float:
+    return round((time.monotonic() - start) * 1000, 2)
 
 # Mock data stores
 payments_db = {}
@@ -104,6 +132,24 @@ async def get_transaction(transaction_id: str):
         raise HTTPException(status_code=404, detail="Transaction not found")
     return transactions_db[transaction_id]
 
+
+def _attempt_payment(payment_id: str, request: PaymentRequest, attempt: int) -> dict:
+    """Single simulated payment attempt (unchanged logic, extracted as a test seam)."""
+    transaction_id = str(uuid.uuid4())
+    payment = {
+        "id": payment_id,
+        "user_id": request.user_id,
+        "amount": request.amount,
+        "currency": request.currency,
+        "status": "completed",
+        "created_at": datetime.now(),
+        "transaction_id": transaction_id,
+        "attempts": attempt
+    }
+    payments_db[payment_id] = payment
+    return payment
+
+
 @app.post("/payments/process-with-retry")
 async def process_payment_with_retry(request: PaymentRequest, max_retries: int = 3):
     """
@@ -112,26 +158,51 @@ async def process_payment_with_retry(request: PaymentRequest, max_retries: int =
     """
     payment_id = str(uuid.uuid4())
     backoff_delays = [1, 5, 30]
+    start = time.monotonic()
 
     for attempt in range(1, max_retries + 1):
         try:
             # Simulate payment processing
-            transaction_id = str(uuid.uuid4())
-            payment = {
-                "id": payment_id,
-                "user_id": request.user_id,
-                "amount": request.amount,
-                "currency": request.currency,
-                "status": "completed",
-                "created_at": datetime.now(),
-                "transaction_id": transaction_id,
-                "attempts": attempt
-            }
-            payments_db[payment_id] = payment
+            payment = _attempt_payment(payment_id, request, attempt)
+
+            if attempt > 1:
+                _safe_log(
+                    logging.INFO,
+                    "payment.retry.succeeded",
+                    payment_id=payment_id,
+                    transaction_id=payment.get("transaction_id"),
+                    attempt=attempt,
+                    max_attempts=max_retries,
+                    duration_ms=_elapsed_ms(start),
+                    outcome="success",
+                )
+            else:
+                _safe_log(
+                    logging.DEBUG,
+                    "payment.process.succeeded",
+                    payment_id=payment_id,
+                    transaction_id=payment.get("transaction_id"),
+                    attempt=attempt,
+                    max_attempts=max_retries,
+                    duration_ms=_elapsed_ms(start),
+                    outcome="success",
+                )
             return payment
 
         except Exception as e:
             if attempt == max_retries:
+                _safe_log(
+                    logging.ERROR,
+                    "payment.retry.exhausted",
+                    payment_id=payment_id,
+                    attempt=attempt,
+                    max_attempts=max_retries,
+                    duration_ms=_elapsed_ms(start),
+                    outcome="failure",
+                    error_type=type(e).__name__,
+                    error_message=_short_error(e),
+                )
+
                 # Final failure - notify user
                 try:
                     async with httpx.AsyncClient() as client:
@@ -160,6 +231,18 @@ async def process_payment_with_retry(request: PaymentRequest, max_retries: int =
                 }
                 payments_db[payment_id] = failure_payment
                 raise HTTPException(status_code=400, detail=f"Payment failed after {attempt} attempts")
+
+            _safe_log(
+                logging.DEBUG,
+                "payment.retry.attempt_failed",
+                payment_id=payment_id,
+                attempt=attempt,
+                max_attempts=max_retries,
+                duration_ms=_elapsed_ms(start),
+                outcome="failure",
+                error_type=type(e).__name__,
+                error_message=_short_error(e),
+            )
 
             # Backoff and retry
             delay = backoff_delays[attempt - 1]

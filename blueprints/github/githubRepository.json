@@ -1,0 +1,34 @@
+{
+  "identifier": "githubRepository",
+  "title": "GitHub Repository",
+  "icon": "Github",
+  "schema": {
+    "properties": {
+      "readme": { "title": "README", "type": "string", "format": "markdown" },
+      "url": { "title": "Repository URL", "type": "string", "format": "url" },
+      "defaultBranch": { "title": "Default Branch", "type": "string" },
+      "description": { "title": "Description", "type": "string" },
+      "language": { "title": "Language", "type": "string" },
+      "visibility": { "title": "Visibility", "type": "string" },
+      "last_push": { "title": "Last Push", "type": "string", "format": "date-time" },
+      "codeowners": { "title": "CODEOWNERS", "type": "string" },
+      "gitignore": { "title": "Gitignore", "type": "string" },
+      "pr_template": { "title": "PR Template", "type": "string" }
+    },
+    "required": []
+  },
+  "relations": {
+    "organization": {
+      "title": "Organization",
+      "target": "githubOrganization",
+      "required": false,
+      "many": false
+    },
+    "githubTeams": {
+      "title": "GitHub Teams",
+      "target": "githubTeam",
+      "required": false,
+      "many": true
+    }
+  }
+}

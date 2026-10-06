@@ -1,0 +1,16 @@
+service_name: notification-service
+description: Sends notifications via email, SMS, and webhooks. Provides async notification handling for other services.
+language: Python
+owner: platform-team
+github_repository_id: port-agentic-sdlc
+path: services/notification-service
+port: 8002
+health_check_url: /health
+serviceTier: Tier 2
+status: active
+dependencies: []
+tech_stack:
+  - Python 3.10+
+  - FastAPI
+  - Pydantic
+  - uvicorn

@@ -1,53 +1,33 @@
-"""The Reviewer Agent - conducts security, style, and performance reviews on pull requests."""
+"""Reviewer Agent - reviews factory PRs and writes the verdict back to Port."""
 
 from agents.base import BaseAgent
+from tools.github_tools import create_github_tools
 
 
-REVIEWER_SYSTEM_PROMPT = """You are the Security & Quality Reviewer Agent, responsible for conducting rigorous code reviews before human approval.
+REVIEWER_SYSTEM_PROMPT = """You are the Security & Quality Reviewer Agent.
 
-Your responsibilities:
-1. Review pull requests for:
-   - Security vulnerabilities (injection, auth flaws, data exposure, etc.)
-   - Code style and convention violations
-   - Performance issues (N+1 queries, inefficient algorithms, memory leaks)
-   - Test coverage gaps
-   - API contract violations
-   - Adherence to organizational standards
+Workflow:
+1. github_list_pr_files on the given PR URL.
+2. Confirm every changed file is under the expected service path. If not, REQUEST_CHANGES.
+3. Review for security, logging of secrets, error handling, and consistency with the existing FastAPI mock style.
+4. github_submit_review with APPROVE, REQUEST_CHANGES, or COMMENT, plus github_comment_on_pr with a structured summary.
+5. port_upsert_entity on the jiraIssue:
+   - factoryStage: Done if APPROVE, Review if COMMENT, Failed if REQUEST_CHANGES for policy violations
+   - reviewVerdict: approve | comment | request_changes
+   - aiReadinessReason: short markdown of findings
 
-2. Query Port to understand:
-   - Service dependencies and their APIs
-   - Organizational security policies
-   - Tech stack standards
+End with JSON:
+{"verdict":"approve","factoryStage":"Done","findings":["..."]}
+"""
 
-3. For each PR, provide:
-   - A summary of findings (vulnerabilities, style issues, performance concerns)
-   - Specific line-by-line feedback
-   - Severity rating (critical, high, medium, low)
-   - Remediation suggestions
-
-Review Standards:
-- Security is paramount - flag any potential vulnerabilities immediately
-- Check for compliance with service's existing patterns
-- Verify proper error handling and logging
-- Ensure tests adequately cover new code paths
-- Look for opportunities to improve clarity and maintainability
-
-Output Format:
-Provide findings in a structured format:
-- CRITICAL issues (must fix before merge)
-- HIGH issues (should fix before merge)
-- MEDIUM issues (consider fixing)
-- LOW issues (nice to fix)
-- Questions/clarifications needed
-
-After review, update Port with your findings and recommendation (approve, request changes, or conditional approve)."""
 
 class ReviewerAgent(BaseAgent):
-    """Agent for code review and quality assurance."""
-
     def __init__(self, **kwargs):
+        extra = kwargs.pop("extra_tools", None) or []
+        extra = list(extra) + create_github_tools()
         super().__init__(
             name="ReviewerAgent",
             system_prompt=REVIEWER_SYSTEM_PROMPT,
-            **kwargs
+            extra_tools=extra,
+            **kwargs,
         )

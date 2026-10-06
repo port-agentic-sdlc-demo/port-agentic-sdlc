@@ -1,0 +1,20 @@
+{
+  "identifier": "githubUser",
+  "title": "GitHub User",
+  "icon": "Github",
+  "schema": {
+    "properties": {
+      "email": { "title": "Email", "type": "string" },
+      "login": { "title": "Login", "type": "string" }
+    },
+    "required": []
+  },
+  "relations": {
+    "team": {
+      "title": "GitHub Team",
+      "target": "githubTeam",
+      "required": false,
+      "many": true
+    }
+  }
+}

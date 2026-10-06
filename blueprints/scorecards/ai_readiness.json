@@ -1,0 +1,46 @@
+{
+  "identifier": "ai_readiness",
+  "title": "AI readiness",
+  "levels": [
+    { "title": "Basic", "color": "paleBlue" },
+    { "title": "Bronze", "color": "bronze" }
+  ],
+  "rules": [
+    {
+      "identifier": "has_description",
+      "title": "Has description",
+      "description": "Ticket must have a description before the factory may plan",
+      "level": "Bronze",
+      "query": {
+        "combinator": "and",
+        "conditions": [
+          { "property": "description", "operator": "isNotEmpty" }
+        ]
+      }
+    },
+    {
+      "identifier": "has_service_tier",
+      "title": "Linked to a service",
+      "description": "serviceTier is mirrored from the related service",
+      "level": "Bronze",
+      "query": {
+        "combinator": "and",
+        "conditions": [
+          { "property": "serviceTier", "operator": "isNotEmpty" }
+        ]
+      }
+    },
+    {
+      "identifier": "not_tier_one",
+      "title": "Not a Tier 1 service",
+      "description": "Tier 1 services require human-only implementation",
+      "level": "Bronze",
+      "query": {
+        "combinator": "and",
+        "conditions": [
+          { "property": "serviceTier", "operator": "!=", "value": "Tier 1" }
+        ]
+      }
+    }
+  ]
+}

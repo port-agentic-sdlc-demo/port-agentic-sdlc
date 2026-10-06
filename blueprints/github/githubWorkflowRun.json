@@ -1,0 +1,41 @@
+{
+  "identifier": "githubWorkflowRun",
+  "title": "GitHub Workflow Run",
+  "icon": "Github",
+  "schema": {
+    "properties": {
+      "conclusion": { "title": "Conclusion", "type": "string" },
+      "createdAt": { "title": "Created At", "type": "string", "format": "date-time" },
+      "headBranch": { "title": "Head Branch", "type": "string" },
+      "link": { "title": "Link", "type": "string", "format": "url" },
+      "name": { "title": "Name", "type": "string" },
+      "runAttempt": { "title": "Run Attempt", "type": "number" },
+      "runNumber": { "title": "Run Number", "type": "number" },
+      "runStartedAt": { "title": "Run Started At", "type": "string", "format": "date-time" },
+      "status": { "title": "Status", "type": "string" },
+      "triggeringActor": { "title": "Triggering Actor", "type": "string" },
+      "updatedAt": { "title": "Updated At", "type": "string", "format": "date-time" }
+    },
+    "required": []
+  },
+  "relations": {
+    "repository": {
+      "title": "Repository",
+      "target": "githubRepository",
+      "required": false,
+      "many": false
+    },
+    "workflow": {
+      "title": "Workflow",
+      "target": "githubWorkflow",
+      "required": false,
+      "many": false
+    },
+    "service": {
+      "title": "Service",
+      "target": "service",
+      "required": false,
+      "many": false
+    }
+  }
+}

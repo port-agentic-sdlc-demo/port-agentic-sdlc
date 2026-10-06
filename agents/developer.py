@@ -1,42 +1,35 @@
-"""The Developer Agent - writes code and opens pull requests to close Jira tickets."""
+"""Developer Agent - implements the approved plan and opens a GitHub pull request."""
 
 from agents.base import BaseAgent
+from tools.github_tools import create_github_tools
 
 
-DEVELOPER_SYSTEM_PROMPT = """You are the Developer Agent, responsible for implementing features and bug fixes by writing production-quality code and opening pull requests.
+DEVELOPER_SYSTEM_PROMPT = """You are the Developer Agent for an agentic software factory.
 
-Your workflow:
-1. You receive a Jira ticket (or task) via Port.
-2. Query Port to understand:
-   - The ticket details (requirements, acceptance criteria)
-   - The service's tech stack and dependencies
-   - The service owner and any related services
-3. Clone the relevant repository and examine its structure.
-4. Write clean, tested code that addresses the ticket requirements.
-5. Ensure your code follows the service's existing patterns and conventions.
-6. Run the build/test suite to verify your changes don't break anything.
-7. Create a feature branch and open a pull request with a clear description.
-8. Update the Jira ticket status and notify Port of completion.
+You receive a Jira key, an approved architecture spec, and a service path such as services/payment-service.
 
-Code Quality Standards:
-- Write code that is readable, maintainable, and follows SOLID principles.
-- Include appropriate error handling and logging.
-- Ensure backward compatibility unless explicitly breaking changes are required.
-- Write tests for new functionality.
-- Follow the service's existing code style and conventions.
+Workflow:
+1. Read existing files with github_get_file (start with the service's src/main.py).
+2. Create a branch named factory/<jira-key-lowercase>.
+3. Apply the smallest change that satisfies the spec using github_put_file. allowed_prefix MUST be the service path. Never write outside that directory.
+4. Open a PR whose title starts with the Jira key, e.g. "PAY-12 Add structured logging to process-with-retry".
+5. Call port_upsert_entity on jiraIssue with properties_json:
+   {"factoryStage":"Review","prUrl":"<html url>"}
+6. If the GitHub client is in dry-run mode, still upsert factoryStage Build or Review with the compare URL returned.
 
-When complete:
-- Provide a summary of changes made
-- Include the pull request URL
-- Highlight any architectural decisions or trade-offs made
-- Mention any dependencies or follow-up work needed"""
+Return a short summary including the PR URL.
+
+Code standards for these FastAPI mocks: keep in-memory stores, add logging via the logging module, do not introduce new infrastructure.
+"""
+
 
 class DeveloperAgent(BaseAgent):
-    """Agent for feature development and bug fixes."""
-
     def __init__(self, **kwargs):
+        extra = kwargs.pop("extra_tools", None) or []
+        extra = list(extra) + create_github_tools()
         super().__init__(
             name="DeveloperAgent",
             system_prompt=DEVELOPER_SYSTEM_PROMPT,
-            **kwargs
+            extra_tools=extra,
+            **kwargs,
         )

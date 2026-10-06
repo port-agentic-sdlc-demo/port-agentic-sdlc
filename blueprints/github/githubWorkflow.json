@@ -1,0 +1,25 @@
+{
+  "identifier": "githubWorkflow",
+  "title": "GitHub Workflow",
+  "icon": "Github",
+  "schema": {
+    "properties": {
+      "path": { "title": "Path", "type": "string" },
+      "status": { "title": "Status", "type": "string" },
+      "createdAt": { "title": "Created At", "type": "string", "format": "date-time" },
+      "updatedAt": { "title": "Updated At", "type": "string", "format": "date-time" },
+      "link": { "title": "Link", "type": "string", "format": "url" },
+      "last_triggered_at": { "title": "Last Triggered At", "type": "string", "format": "date-time" },
+      "result": { "title": "Result", "type": "string" }
+    },
+    "required": []
+  },
+  "relations": {
+    "repository": {
+      "title": "Repository",
+      "target": "githubRepository",
+      "required": false,
+      "many": false
+    }
+  }
+}

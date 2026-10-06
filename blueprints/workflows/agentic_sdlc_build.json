@@ -1,0 +1,141 @@
+{
+  "identifier": "agentic_sdlc_build",
+  "title": "Agentic Factory: Approve and Build",
+  "icon": "Microservice",
+  "description": "Human approval of the Architect plan, then dispatch the local Developer agent.",
+  "category": "SDLC",
+  "allowAnyoneToViewRuns": true,
+  "nodes": [
+    {
+      "identifier": "trigger",
+      "title": "Plan awaiting approval",
+      "config": {
+        "type": "EVENT_TRIGGER",
+        "event": {
+          "type": "ENTITY_UPDATED",
+          "blueprintIdentifier": "jiraIssue"
+        },
+        "condition": {
+          "type": "JQ",
+          "combinator": "and",
+          "expressions": [
+            ".diff.after.properties.factoryStage == \"AwaitingApproval\"",
+            ".diff.before.properties.factoryStage != \"AwaitingApproval\""
+          ]
+        },
+        "published": true
+      },
+      "variables": {},
+      "verbose": true
+    },
+    {
+      "identifier": "approve_plan",
+      "title": "Approve architecture",
+      "config": {
+        "type": "INPUT",
+        "description": "Review the Architect spec on the Jira entity, then approve implementation.",
+        "userInputs": {
+          "properties": {
+            "comment": {
+              "type": "string",
+              "title": "Comment",
+              "format": "multi-line"
+            }
+          },
+          "buttons": [
+            {
+              "identifier": "approve",
+              "label": "Approve",
+              "variant": "PRIMARY"
+            },
+            {
+              "identifier": "decline",
+              "label": "Decline",
+              "variant": "DANGER"
+            }
+          ]
+        },
+        "outlets": [
+          {
+            "evaluationMethod": "button",
+            "identifier": "approve",
+            "title": "Approved",
+            "numOfResponders": 1
+          },
+          {
+            "evaluationMethod": "button",
+            "identifier": "decline",
+            "title": "Declined",
+            "numOfResponders": 1
+          }
+        ],
+        "responders": {
+          "roles": ["Admin"]
+        }
+      },
+      "variables": {},
+      "verbose": false
+    },
+    {
+      "identifier": "mark_declined",
+      "title": "Mark declined",
+      "config": {
+        "type": "UPSERT_ENTITY",
+        "blueprintIdentifier": "jiraIssue",
+        "mapping": {
+          "identifier": "{{ .outputs.trigger.diff.after.identifier }}",
+          "properties": {
+            "factoryStage": "Failed",
+            "aiReadinessReason": "Human declined the Architect plan."
+          }
+        },
+        "onFailure": "terminate"
+      },
+      "variables": {},
+      "verbose": false
+    },
+    {
+      "identifier": "call_developer",
+      "title": "Dispatch Developer",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "{{ .secrets[\"FACTORY_WEBHOOK_URL\"] }}/factory/developer",
+        "agent": false,
+        "synchronized": false,
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "jira_key": "{{ .outputs.trigger.diff.after.identifier }}",
+          "title": "{{ .outputs.trigger.diff.after.title }}",
+          "description": "{{ .outputs.trigger.diff.after.properties.description }}",
+          "service_id": "{{ .outputs.trigger.diff.after.relations.service }}",
+          "service_path": "{{ .outputs.trigger.diff.after.properties.servicePath }}",
+          "architecture_spec": "{{ .outputs.trigger.diff.after.properties.architectureSpec }}",
+          "workflow_run_id": "{{ .workflowRun.identifier }}"
+        },
+        "onTimeout": "continue",
+        "onFailure": "terminate"
+      },
+      "variables": {},
+      "verbose": true
+    }
+  ],
+  "connections": [
+    {
+      "sourceIdentifier": "trigger",
+      "targetIdentifier": "approve_plan"
+    },
+    {
+      "sourceIdentifier": "approve_plan",
+      "targetIdentifier": "call_developer",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "approve_plan",
+      "targetIdentifier": "mark_declined",
+      "sourceOutletIdentifier": "decline"
+    }
+  ]
+}

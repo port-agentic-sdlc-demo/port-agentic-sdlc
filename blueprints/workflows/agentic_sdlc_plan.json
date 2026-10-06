@@ -1,0 +1,113 @@
+{
+  "identifier": "agentic_sdlc_plan",
+  "title": "Agentic Factory: Plan",
+  "icon": "Microservice",
+  "description": "When a Jira issue moves to In Progress, dispatch the local Architect agent.",
+  "category": "SDLC",
+  "allowAnyoneToViewRuns": true,
+  "nodes": [
+    {
+      "identifier": "trigger",
+      "title": "Jira issue updated",
+      "config": {
+        "type": "EVENT_TRIGGER",
+        "event": {
+          "type": "ENTITY_UPDATED",
+          "blueprintIdentifier": "jiraIssue"
+        },
+        "condition": {
+          "type": "JQ",
+          "combinator": "and",
+          "expressions": [
+            ".diff.after.properties.status == \"In Progress\"",
+            "(.diff.after.properties.factoryStage // \"Triage\") == \"Triage\""
+          ]
+        },
+        "published": true
+      },
+      "variables": {},
+      "verbose": true
+    },
+    {
+      "identifier": "ai_ready",
+      "title": "Has description",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "ready",
+            "title": "Ready",
+            "expression": "(.outputs.trigger.diff.after.properties.description // \"\") != \"\""
+          },
+          {
+            "identifier": "not_ready",
+            "title": "Not ready",
+            "expression": "(.outputs.trigger.diff.after.properties.description // \"\") == \"\""
+          }
+        ]
+      },
+      "variables": {},
+      "verbose": false
+    },
+    {
+      "identifier": "mark_failed",
+      "title": "Mark not AI-ready",
+      "config": {
+        "type": "UPSERT_ENTITY",
+        "blueprintIdentifier": "jiraIssue",
+        "mapping": {
+          "identifier": "{{ .outputs.trigger.diff.after.identifier }}",
+          "properties": {
+            "factoryStage": "Failed",
+            "aiReadinessReason": "Blocked: Jira description is empty. Factory will not call Architect."
+          }
+        },
+        "onFailure": "terminate"
+      },
+      "variables": {},
+      "verbose": false
+    },
+    {
+      "identifier": "call_architect",
+      "title": "Dispatch Architect",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "{{ .secrets[\"FACTORY_WEBHOOK_URL\"] }}/factory/architect",
+        "agent": false,
+        "synchronized": false,
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "jira_key": "{{ .outputs.trigger.diff.after.identifier }}",
+          "title": "{{ .outputs.trigger.diff.after.title }}",
+          "description": "{{ .outputs.trigger.diff.after.properties.description }}",
+          "service_id": "{{ .outputs.trigger.diff.after.relations.service }}",
+          "service_path": "{{ .outputs.trigger.diff.after.properties.servicePath }}",
+          "workflow_run_id": "{{ .workflowRun.identifier }}"
+        },
+        "onTimeout": "continue",
+        "onFailure": "terminate"
+      },
+      "variables": {},
+      "verbose": true
+    }
+  ],
+  "connections": [
+    {
+      "sourceIdentifier": "trigger",
+      "targetIdentifier": "ai_ready"
+    },
+    {
+      "sourceIdentifier": "ai_ready",
+      "targetIdentifier": "call_architect",
+      "sourceOutletIdentifier": "ready"
+    },
+    {
+      "sourceIdentifier": "ai_ready",
+      "targetIdentifier": "mark_failed",
+      "sourceOutletIdentifier": "not_ready"
+    }
+  ]
+}
